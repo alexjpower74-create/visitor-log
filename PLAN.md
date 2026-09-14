@@ -237,8 +237,7 @@ visitor-log --local --persist-to $STATE_DIR`, documented) are unchanged; all "no
 by arrangement (Ellen) → 403 with the exact message, and staff sign Ellen in → 201 with `warnings[0].code` `by_arrangement`; the visitor
 limit: two for Mary then a third → 409 `resident_full`, one signs out, the third → 201; the same phone twice → 409 `already_in`;
 **the count across midnight auto sign-out**: at Sep 14 2:00 PM two Harbour visitors sign in, one signs out at 3:00 PM, a Lighthouse
-visitor signs in at 8:00 PM, staff sign a Harbour visitor in at 10:00 PM; at 8:59 PM `total` 3 (Harbour 2, Lighthouse 1); at 9:00 PM
-`total` 2 and the Harbour visitor has `out_kind: "auto"`, `out_label` "9:00 PM" and is in `auto_today`; at 11:59 PM `total` 2; at 12:00 AM
+visitor signs in at 8:00 PM, staff sign a Harbour visitor in at 10:00 PM; at 8:59 PM `total` 2 (Harbour 1, Lighthouse 1); at 9:00 PM `total` 1 and the Harbour visitor has `out_kind: "auto"`, `out_label` "9:00 PM" and is in `auto_today`; at 11:59 PM `total` 2; at 12:00 AM
 Sep 15 `total` 0, the late Harbour visit and the Lighthouse visit are `auto` at "12:00 AM", and the Sep 14 day log shows all four with the
 right `out_kind`; **property** (`tests/count-property.test.mjs`, seeded PRNG): 200 events over 3 days in time order (visitor sign-ins on
 Lighthouse and inside Harbour's windows, staff sign-ins at any hour, sign-outs by token and by staff) with 40 checkpoints between them; at

@@ -19,11 +19,13 @@ export async function building(c) {
     .bind(t, c.today).all()
   const inside = results.filter((v) => inBuildingAt(v, t))
   const nowLocal = localHHMM(c.now)
-  const units = w.units.filter((u) => u.active).map((u) => {
+  // Every open unit, then any closed unit that still has visitors in: nobody in the building is ever hidden.
+  const shown = [...w.units.filter((u) => u.active), ...w.units.filter((u) => !u.active && inside.some((v) => v.unit_id === u.id))]
+  const units = shown.map((u) => {
     const visits = inside.filter((v) => v.unit_id === u.id)
     return {
       id: u.id, name: u.name, hours_label: hoursLabel(u.hours), open_now: openNow(u.hours, nowLocal),
-      notices: noticesFor(w.notices, u.id).map((n) => noticeView(n, w)), count: visits.length,
+      active: u.active, notices: noticesFor(w.notices, u.id).map((n) => noticeView(n, w)), count: visits.length,
       visits: visits.map((v) => staffVisitView(v, w, t)),
     }
   })

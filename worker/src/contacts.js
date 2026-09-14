@@ -11,8 +11,8 @@ function readQuery(c, w) {
   const p = c.url.searchParams
   const from = p.get('from') || ''
   const to = p.get('to') || ''
-  if (!isValidDate(from)) throw bad('from', 'Pick a start date.')
-  if (!isValidDate(to)) throw bad('to', 'Pick an end date.')
+  if (!isValidDate(from)) throw bad('from', 'Pick a real date.')
+  if (!isValidDate(to)) throw bad('to', 'Pick a real date.')
   if (from > to) throw bad('to', 'The end date is before the start date.')
   if (daysBetween(from, to) > 366) throw bad('from', 'Pick dates no more than 366 days apart.')
   const unit = p.get('unit') || 'all'

@@ -108,14 +108,14 @@ test('visitor start: home, retention and today; screening off → questions [] e
   const r = await call('GET', '/api/visitor/start')
   assert.deepEqual(r.body, {
     home_name: HOME, sample: true, phone: '709-555-0142', retention_days: 30, today: '2026-09-14', date_label: 'Mon Sep 14',
-    time_label: '3:00 PM', home_notices: [], screening: { enabled: false, questions: [] },
+    time_label: '3:00 PM', home_notices: [], screening: { enabled: false, questions: [], stop_message: '' },
   })
   const donna = await token(PIN.donna)
   const saved = await call('PUT', '/api/settings/screening',
     { token: donna, body: { enabled: false, stop_message: '', questions: [{ text: 'SAMPLE question: do you feel sick today?' }] } })
   assert.equal(saved.status, 200, JSON.stringify(saved.body))
   assert.equal(saved.body.settings.screening_questions.length, 1)
-  assert.deepEqual((await call('GET', '/api/visitor/start')).body.screening, { enabled: false, questions: [] })
+  assert.deepEqual((await call('GET', '/api/visitor/start')).body.screening, { enabled: false, questions: [], stop_message: '' }, 'no stop message while screening is off')
 })
 
 test('search: "ma" → Mary S. and Margaret L.; "m" → 400 field q; "10" → rooms 101, 104, 108; "mary s" → Mary', async () => {
@@ -263,7 +263,7 @@ test('screening: a yes stops the sign-in with the stop message byte for byte, an
   assert.equal(set.status, 200, JSON.stringify(set.body))
   const [q1, q2] = set.body.settings.screening_questions.map((q) => q.id)
   assert.deepEqual((await call('GET', '/api/visitor/start')).body.screening,
-    { enabled: true, questions: [{ id: q1, text: 'SAMPLE: do you feel sick today?' }, { id: q2, text: 'SAMPLE: were you told to stay home?' }] })
+    { enabled: true, questions: [{ id: q1, text: 'SAMPLE: do you feel sick today?' }, { id: q2, text: 'SAMPLE: were you told to stay home?' }], stop_message: STOP }, 'the stop message comes with the questions, byte for byte')
   assert.equal((await signin('r_frank', T3PM, { answers: { [q1]: 'no', [q2]: 'no' } })).status, 201, 'someone is already in')
 
   const before = { total: (await building(carl)).total, log: (await dayLog(carl, '2026-09-14')).count, rows: visitsInD1() }

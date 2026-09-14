@@ -21,6 +21,7 @@
     "negative:last-manager": "node tests/negative-last-manager.mjs",
     "negative:ratelimit": "node tests/negative-ratelimit.mjs",
     "negative:contacts-unit": "node tests/negative-contacts-unit.mjs",
-    "first-setup": "node tools/first-setup.mjs"
+    "first-setup": "node tools/first-setup.mjs",
+    "negative:closed-unit-hidden": "node tests/negative-closed-unit-hidden.mjs"
   }
 }

@@ -1,0 +1,20 @@
+{
+  "name": "visitor-log-worker",
+  "private": true,
+  "type": "module",
+  "description": "Visitor Log Worker: the API in docs/API.md on D1. No npm dependencies; uses the wrangler on PATH. Local only.",
+  "scripts": {
+    "test": "node tests/run.mjs",
+    "test:unit": "node tests/run.mjs --unit-only",
+    "dev": "wrangler d1 migrations apply visitor-log --local --persist-to .state-dev && wrangler dev --local --port 8402 --inspector-port 8412 --persist-to .state-dev",
+    "dev:test": "wrangler d1 migrations apply visitor-log --local --persist-to .state-dev && wrangler dev --local --port 8402 --inspector-port 8412 --persist-to .state-dev --var TEST_MODE:1",
+    "negative": "node tests/negative-all.mjs",
+    "negative:notice-unit": "node tests/negative-notice-unit.mjs",
+    "negative:screening": "node tests/negative-screening.mjs",
+    "negative:auto-out": "node tests/negative-auto-out.mjs",
+    "negative:retention-setting": "node tests/negative-retention-setting.mjs",
+    "negative:retention-boundary": "node tests/negative-retention-boundary.mjs",
+    "negative:link-expiry": "node tests/negative-link-expiry.mjs",
+    "negative:hours-close": "node tests/negative-hours-close.mjs"
+  }
+}

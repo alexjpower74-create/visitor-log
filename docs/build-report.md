@@ -1,0 +1,40 @@
+# Visitor Log: build report (vl-lead)
+
+Overnight build 2026-09-14. Lead `vl-lead` (Opus xhigh), slices `vl1` (Worker + visitor pages) and `vl2` (staff pages + settings),
+both Opus medium, run with Rig in herdr tabs. Local only: nothing deployed, nothing sent, SAMPLE home and people only.
+Every number below was measured in a QA worktree pinned to the sha shown (`rig qa --ref <sha> --port 8409`), never in a slice's own
+tree. Pass/fail comes from each command's own exit code, echoed inside the run.
+
+## Final QA
+
+_Not run yet._
+
+## QA history
+
+### 1. main `3885c0c` (vl1 M1 Worker core + vl2 M1 pages merged), 18:00
+
+Command: `rig qa --ref 3885c0c --port 8409 --run 'cd worker && PORT=8409 npm test …; echo WORKER_EXIT=$?; NEG_PORT=8409 npm run negative …; echo NEGATIVE_EXIT=$?'`
+
+| Suite | Passed | Failed | Skipped |
+|---|---|---|---|
+| Worker unit (time, hours, rules, retention) | 23 | 0 | 0 |
+| Worker on an empty D1 | 1 | 0 | 0 |
+| Worker API + count property (`wrangler dev --local`, `TEST_MODE`) | 36 | 0 | 1 (inactive resident search: no M1 route can turn a resident off) |
+| Worker negative controls | 7 red of 7 | | |
+
+`WORKER_EXIT=0`, `NEGATIVE_EXIT=0`. Each control's red was read in `worker/tests/negative-control.log`: every one failed on an
+assertion about the broken behaviour (screening: expected 403, got 201; link expiry: expected 200 at 11:59:59 PM, got 410; retention
+setting: expected 0 rows, got 1; retention boundary: expected 1 row, got 0; notice unit, auto-out and hours: deep-equal mismatches),
+none on a connection error or a Worker that failed to start. No 84xx port was left listening.
+
+Before merging vl1 M1 the lead read `worker/src/world.js` (the one "in the building at T" rule), `rules.js` (the visitor sign-in checks
+in API.md's order) and `maintenance.js` (auto sign-out and the retention cutoff `date < today − retention_days`). Before merging vl2 M1
+the lead read `app/public/common/api.js`, checked every `/api/…` path the staff and settings pages call against API.md, and looked at
+the tablet and 390 "In the building" screenshots.
+
+## Contract changes made during the build
+
+- vl2 asked what a staff sign-in with no resident returns → API.md: 400 `field: "resident_id"`, checked first (6be6cde).
+- vl1 found the lead's across-midnight counts in PLAN.md were wrong (2 at 8:59 PM, 1 at 9:00 PM, not 3 and 2); PLAN.md fixed, the rule
+  unchanged. API.md gained the `created_label` format, form-value numbers, `""` for the whole home / no limit, and the staff sign-in
+  check order (508c11a).

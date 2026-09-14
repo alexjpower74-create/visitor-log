@@ -32,6 +32,28 @@ in API.md's order) and `maintenance.js` (auto sign-out and the retention cutoff 
 the lead read `app/public/common/api.js`, checked every `/api/…` path the staff and settings pages call against API.md, and looked at
 the tablet and 390 "In the building" screenshots.
 
+### 2. main `fc76437` (vl2 M1b polish + vl1 M2 Worker merged), 18:24
+
+Command: `rig qa --ref fc76437 --port 8409 --run 'cd worker && PORT=8409 npm test …; echo WORKER_EXIT=$?; NEG_PORT=8409 npm run negative …; echo NEGATIVE_EXIT=$?; RED_COUNT…; CONN_ERRORS…'`
+
+| Suite | Passed | Failed | Skipped |
+|---|---|---|---|
+| Worker unit (csv, hours, retention, rules, time) | 26 | 0 | 0 |
+| Worker on an empty D1 | 1 | 0 | 0 |
+| Worker API M1 + count property + M2 | 48 | 0 | 0 |
+| Worker first setup (the tool's SQL, Worker **without** `TEST_MODE`) | 1 | 0 | 0 |
+| Worker negative controls (M1 a–g, M2 h–l) | 12 red of 12 | | |
+
+`WORKER_EXIT=0`, `NEGATIVE_EXIT=0`, `RED_COUNT=12`, no connection errors in the control output, `rig qa` exit 0, QA ports free after.
+Before merging vl1 M2 the lead read `worker/src/rollcall.js` (the list is recomputed from visits; a second Start is refused by the
+insert itself) and `csv.js`. `worker/tools/first-setup.mjs` holds literal control bytes in a regex (git shows it as binary); vl1 fixes
+it in M3 with escapes.
+
+**A QA run that did not run.** The first attempt at this QA (18:22) never tested anything: QA 1's negative controls had appended to
+`worker/tests/negative-control.log`, a tracked file, in the QA worktree, so `rig qa` could not check out `fc76437`, and the command's
+trailing `echo` still printed "done" with exit 0. Caught by reading the output, not the exit code. Every later QA run first shows the QA
+worktree's `git status`, restores that log, and reports `rig qa`'s own exit code.
+
 ## Contract changes made during the build
 
 - vl2 asked what a staff sign-in with no resident returns → API.md: 400 `field: "resident_id"`, checked first (6be6cde).

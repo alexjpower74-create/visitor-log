@@ -213,8 +213,9 @@ function unitCard(u) {
       h('div', { class: 'grow' },
         h('h2', { class: 'unit-name' }),
         h('p', { class: 'unit-hours' }),
-        h('div', { class: 'tags' }, h('span', { class: 'pill open-pill' }))),
+        h('div', { class: 'tags' }, h('span', { class: 'pill unit-closed-pill', hidden: true }, 'Unit closed'), h('span', { class: 'pill open-pill' }))),
       h('span', { class: 'unit-count', 'aria-label': 'visitors in the building on this unit' })),
+    h('p', { class: 'unit-closed-note', hidden: true }, 'This unit is closed in Settings, but these visitors are still signed in. Sign them out as they leave.'),
     h('div', { class: 'unit-notices' }),
     h('div', { class: 'visits' }),
     h('p', { class: 'empty-unit' }, 'Nobody is signed in on this unit.'))
@@ -222,6 +223,12 @@ function unitCard(u) {
 
 function updateCard(card, u) {
   card.querySelector('.unit-name').textContent = u.name
+  // A unit closed in Settings that still has visitors in the building (API: active false) stays listed, marked apart from the
+  // Open/Closed visiting-hours pill, and its rows keep Sign out.
+  const unitClosed = u.active === false
+  card.dataset.unitActive = unitClosed ? 'false' : 'true'
+  card.querySelector('.unit-closed-pill').hidden = !unitClosed
+  card.querySelector('.unit-closed-note').hidden = !unitClosed
   const hours = card.querySelector('.unit-hours')
   if (hours.dataset.label !== u.hours_label) {
     hours.replaceChildren(...timeText(u.hours_label))

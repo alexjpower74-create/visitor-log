@@ -107,6 +107,27 @@ test('settings and door sign: every button is big enough and hit-tests to itself
   assertNoThirdParty(context)
 })
 
+test('roll call ticks are at least 64 px and hit-test to themselves, with every other roll call button', async ({ page, context, request }) => {
+  await fresh(context, request)
+  await signInVisitors(request, [HARBOUR[0], LIGHTHOUSE[0], LIGHTHOUSE[1]])
+  await staffSignsIn(page)
+  await openTab(page, 'Roll call')
+  await tap(page, page.locator('#start-roll-call'), 'Start roll call')
+  await tap(page, page.locator('#confirm-roll-call'), 'confirm start')
+  await expect(page.locator('#roll-call-progress')).toHaveText('0 of 3 found')
+  const ticks = page.locator('[data-roll] button.found')
+  await expect(ticks).toHaveCount(3)
+  for (let i = 0; i < 3; i++) {
+    await ticks.nth(i).evaluate((el) => el.scrollIntoView({ block: 'center' }))
+    await expectTapTarget(page, ticks.nth(i), 64, `Found button ${i + 1}`)
+  }
+  await checkButtons(page, 'Roll call going')
+  await tap(page, ticks.first(), 'Found')
+  await expect(page.locator('#roll-call-progress')).toHaveText('1 of 3 found')
+  await expectTapTarget(page, page.locator('[data-roll] button.found[aria-pressed="true"]'), 64, 'Found button after the tick')
+  assertNoThirdParty(context)
+})
+
 test('the primary buttons have contrast of at least 4.5', async ({ page, context, request }) => {
   await fresh(context, request)
   await staffSignsIn(page)

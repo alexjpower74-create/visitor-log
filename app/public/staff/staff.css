@@ -50,6 +50,10 @@
 .unit-notices > * + * { margin-top: 6px; }
 .visits > * + * { margin-top: 8px; }
 .empty-unit { color: var(--muted); padding: 6px 0; }
+/* A unit closed in Settings that still has visitors in (API active: false): a loud edge and its own pill, apart from Open/Closed. */
+.unit-card[data-unit-active="false"] { border-color: var(--sev-restricted); box-shadow: inset 6px 0 0 var(--sev-restricted), var(--shadow); }
+.pill.unit-closed-pill { color: var(--on-sev-restricted); background: var(--sev-restricted); border-color: transparent; }
+.unit-closed-note { font-size: 14px; font-weight: 600; }
 
 .visit-row {
   display: grid;

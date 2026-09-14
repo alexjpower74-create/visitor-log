@@ -30,6 +30,35 @@ test('Ellen with no phone: the by-arrangement warning shows and the visit is in 
   assertNoThirdParty(context)
 })
 
+test('no resident and no name shows the resident error under the picker; a resident and no name shows "Please type their name."', async ({ page, context, request }) => {
+  await fresh(context, request)
+  await staffSignsIn(page)
+  await openTab(page, 'Sign someone in')
+  await expect(page.locator('#manual-resident')).toHaveValue('')
+  await expect(page.locator('#manual-name')).toHaveValue('')
+
+  let answer = page.waitForResponse((r) => r.url().endsWith('/api/staff/visits') && r.request().method() === 'POST')
+  await tap(page, page.locator('#manual-submit'), 'Sign in with nothing picked')
+  let r = await answer
+  expect(r.status()).toBe(400)
+  expect(await r.json()).toMatchObject({ field: 'resident_id', error: 'Please pick who they are visiting.' })
+  await expect(page.locator('[data-error-for="resident_id"]'), 'the resident error under #manual-resident').toHaveText('Please pick who they are visiting.')
+  await expect(page.locator('#manual-resident + [data-error-for="resident_id"]')).toBeVisible()
+  await expect(page.locator('[data-error-for="visitor_name"]')).toHaveText('')
+
+  await page.locator('#manual-resident').selectOption('r_mary')
+  answer = page.waitForResponse((r) => r.url().endsWith('/api/staff/visits') && r.request().method() === 'POST')
+  await tap(page, page.locator('#manual-submit'), 'Sign in with no name')
+  r = await answer
+  expect(r.status()).toBe(400)
+  expect(await r.json()).toMatchObject({ field: 'visitor_name', error: 'Please type their name.' })
+  await expect(page.locator('[data-error-for="visitor_name"]'), 'the name error under #manual-name').toHaveText('Please type their name.')
+  await expect(page.locator('#manual-name + [data-error-for="visitor_name"]')).toBeVisible()
+  await expect(page.locator('[data-error-for="resident_id"]')).toHaveText('')
+  expect((await buildingViaApi(request, await staffToken(request))).total, 'nothing was recorded').toBe(0)
+  assertNoThirdParty(context)
+})
+
 test('with screening on, Sign in without the screened box shows the API message and records nothing; with it, the visit is recorded', async ({ page, context, request }) => {
   await fresh(context, request)
   await setScreeningViaApi(request, await managerToken(request), { enabled: true, stop_message: EXAMPLE_SCREENING.stop_message, questions: EXAMPLE_SCREENING.questions })

@@ -225,3 +225,64 @@ The M1b lib self-check (missing, repeated, no-op anchor → exit 2) stands; thes
   `manual.spec` gets those checks once the fix is on main.
 - M3 specs (roll call, log and contacts, units / residents / staff, door sign) and controls (f)–(h) wait for vl1 M2.
 - The WebKit scroll in the header test is script, not input (see fix 1); the lead may prefer a helper for it in `helpers.mjs`.
+
+## M3 — roll call, day log and contacts, units / residents / staff, door sign (DONE, 2026-09-14)
+
+Rebased on main (823f7f7: vl1 M2 merged at fc76437, contract ead4387). Read vl1's M2 routes (`rollcall.js`, `contacts.js`, `csv.js`,
+`people.js`) against API.md before writing specs: what the pages send matches (boolean `found`, `from`/`to`/`unit` query, string PINs,
+blank PIN kept on edit, `active` booleans), and every error field the specs read lands under its input.
+
+### Specs (`E2E_PORT=8403 npx playwright test tests/staff`)
+**160 passed, 0 failed, 0 skipped** — 40 tests × chromium-390, chromium-tablet, webkit-390, webkit-tablet, 8.5 min.
+New since M2 (14 tests):
+- `rollcall.spec.mjs` (1): three visitors via API; the desk starts the roll call by real taps → "0 of 3 found"; Amira on a second phone
+  context (`STAFF2_PIN`) ticks Paul → the desk shows "1 of 3 found" within 5 s with "Found by Amira H. (SAMPLE)"; the desk ticks Linda
+  ("Found by Carl B. (SAMPLE)", "2 of 3 found"); Grace signs in at 3:03 PM → "Came in after the roll call started", "2 of 4 found";
+  End roll call at 3:05 PM → "Ended 3:05 PM · 2 of 4 found" on the desk and within 5 s on the phone, all four ticks disabled, and the
+  API refuses a tick with 409 "This roll call has ended.".
+  First run was red in both Chromium projects on the end count (2 of 3): the test signed Grace in at the same instant as the end, and
+  API.md lists only visits signed in *before* `ended_at`. The test was wrong, not the page or the Worker; Grace now signs in at 3:03 PM.
+- `log-contacts.spec.mjs` (2): visits on Sep 13 (Linda, Harbour, auto at closing; Paul, Lighthouse, signed out himself at 4:00 PM) and
+  Sep 14 (Grace, Lighthouse, staff at 2:30 PM; Tom, Harbour, still in), set up with forward-moving `X-Test-Now`. Day log for Sep 14 = the
+  API's visit ids in order, "2:30 PM Staff", "Still in", "2 visits"; Previous → Sep 13 ("Day log · Sun Sep 13") = the API's ids, "9:00 PM
+  Auto", "4:00 PM Visitor"; unit filter Harbour → 1 visit. Contact list Sep 13–14 on Harbour wing = the API's count and row ids;
+  **Download CSV by a real tap** → the saved file equals `GET /api/staff/contacts.csv` for the same range and unit byte for byte, and its
+  suggested filename equals the API's `visitor-contacts-u_harbour-2026-09-13-to-2026-09-14.csv`.
+- `settings-m3.spec.mjs` (7): a unit with two windows (typed and time inputs filled) → row "9:00 AM to 11:00 AM and 2:00 PM to 4:30 PM",
+  Bill moved to it → the visitor API's `hours_label` is that; overlapping windows → the API's message under the hours and still 3 units;
+  Nell with initial "q" → "Nell Q. (SAMPLE)" and found by `?q=nell`; Rose "Visits by arrangement only" → the visitor sign-in is 403
+  `by_arrangement` with the exact message; Walter removed → 404 and not in search, listed under Removed; staff with PIN 2580 → 409 `pin_taken`
+  message under `#staff-pin`, still 3 staff; turning off Donna → "The home needs at least one manager." in her row, still on.
+- `door-sign.spec.mjs` (2): `decodeQr('#door-qr')` = `http://127.0.0.1:8403/` (QR ≥ 240 px), home name, SAMPLE, heading, "No app needed.";
+  under print media `html` and `body` are white, `#print-sign` hidden, no aurora, name and SAMPLE visible, the QR still decodes.
+- (1) `manual.spec.mjs` +1: nothing picked → 400 `resident_id` "Please pick who they are visiting." under `#manual-resident`, no name
+  error; a resident and no name → 400 `visitor_name` "Please type their name." under `#manual-name`, the resident error cleared;
+  nothing recorded.
+- (2) `targets.spec.mjs` +1: a started roll call's three `button.found` are ≥ 64 px and hit-test to themselves (also after a tick), and
+  every other button on the going roll call passes the 44/64 rule; in all four projects.
+
+### (3) A closed unit with visitors still in (page only, per the lead; no spec yet)
+`staff.js`: a unit with `active: false` gets `data-unit-active="false"`, a "Unit closed" pill (restricted colour) beside — not instead of —
+the Open/Closed hours pill, a line "This unit is closed in Settings, but these visitors are still signed in. Sign them out as they
+leave.", and an amber edge; its rows are the same rows with Sign out. The page renders units in the API's order, so the closed unit
+comes after the open ones as the API sends it. The mock sends `active` and lists a closed unit that still has visitors in.
+Shown with the mock by real clicks (remove Lighthouse's four residents, close it with Paul and Grace in): the card came after Harbour and
+Cove, pill visible, hours pill "Open", 2 rows with 2 Sign out buttons, total still 5, no page errors —
+`app/tests/staff/shots/chromium-{390,tablet}-staff-building-closed-unit.png`, looked at. Against the real Worker this waits for vl1's M3.
+
+### Negative controls (`node tests/staff/negative-all.mjs`, port 8407) — 11 of 11 RED as intended
+Full output in `app/tests/staff/negative-control.log` (it also keeps the M2 runs). The M2 eight went red again on this tree with the same
+assertions. New:
+| control | break (in the copy) | test that went red | red output |
+|---|---|---|---|
+| (f) local-tick | Found marks the row on this page only, sends nothing | rollcall: a roll call started by real taps… | `Error: the second phone's tick reaches the desk within one poll` Expected "1 of 3 found" Received "0 of 3 found" |
+| (g) csv-stale-unit | Download CSV always asks for all units | log-contacts: the contact list for Sep 13 to 14 on Harbour wing… | `Error: the downloaded CSV is byte for byte the API's` Expected true Received false |
+| (h) qr-wrong-path | the QR encodes `location.origin + '/staff/'` | door-sign: the door sign QR decodes to the sign-in page… | `Error: the door QR opens the sign-in page` Expected "http://127.0.0.1:8407/" Received "http://127.0.0.1:8407/staff/" |
+
+### Screenshots
+`shots-mock.mjs all` (mock, both engines, 390 and tablet): all good; every staff and settings tab re-taken into `app/tests/staff/shots/`
+(chromium) plus the two closed-unit shots above.
+
+### Left undone / for the lead
+- The closed-unit spec waits for vl1's M3 and the lead's prompt.
+- The WebKit `window.scrollBy` in the sticky-header test stays the recorded exception.

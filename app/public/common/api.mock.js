@@ -310,9 +310,10 @@ function route(s, method, p, q, body, token, now) {
     const me = auth(s, token)
     const units = s.units.filter((u) => u.active)
     if (M('GET', /^\/api\/staff\/building$/)) {
-      const out = units.map((u) => {
+      const shown = [...units, ...s.units.filter((u) => !u.active && s.visits.some((v) => v.unit_id === u.id && isIn(v, now)))]
+      const out = shown.map((u) => {
         const visits = s.visits.filter((v) => v.unit_id === u.id && isIn(v, now)).sort((a, b) => (a.in_at < b.in_at ? -1 : 1)).map((v) => staffVisit(s, v, now))
-        return { id: u.id, name: u.name, hours_label: hoursLabel(u.hours), open_now: openAt(u.hours, hm), notices: activeNotices(s, u.id).map((n) => noticeOut(s, n)), count: visits.length, visits }
+        return { id: u.id, name: u.name, active: u.active, hours_label: hoursLabel(u.hours), open_now: openAt(u.hours, hm), notices: activeNotices(s, u.id).map((n) => noticeOut(s, n)), count: visits.length, visits }
       })
       const auto_today = s.visits.filter((v) => v.date === today && !v.out_at && v.auto_out_at <= now).sort((a, b) => (a.auto_out_at < b.auto_out_at ? 1 : -1)).map((v) => staffVisit(s, v, now))
       const going = s.roll_calls.find((r) => !r.ended_at)

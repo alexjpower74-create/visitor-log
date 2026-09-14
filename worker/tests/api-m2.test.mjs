@@ -373,8 +373,8 @@ test('contacts: rows for a range across two dates, by date then time, and the un
 
   const refusals = [
     ['from=2026-09-14&to=2026-09-13', 'to', 'The end date is before the start date.'],
-    ['from=&to=2026-09-14', 'from', 'Pick a start date.'], ['from=2026-02-30&to=2026-09-14', 'from'], ['to=2026-09-14', 'from'],
-    ['from=2026-09-13&to=soon', 'to', 'Pick an end date.'],
+    ['from=&to=2026-09-14', 'from', 'Pick a real date.'], ['from=2026-02-30&to=2026-09-14', 'from'], ['to=2026-09-14', 'from'],
+    ['from=2026-09-13&to=soon', 'to', 'Pick a real date.'],
     ['from=2025-09-12&to=2026-09-14', 'from', 'Pick dates no more than 366 days apart.'],
   ]
   for (const [qs, field, error] of refusals) {
@@ -484,4 +484,25 @@ test('seed: at 3:00 AM and at 3:00 PM at least 3 on Lighthouse; an overdue Harbo
   const other = await call('POST', '/api/test/seed', { body: { scenario: 'party' }, now: nl('15:00') })
   assert.deepEqual([other.status, other.body.field], [400, 'scenario'])
   assert.equal(d1("SELECT COUNT(*) AS n FROM visits WHERE visitor_name NOT LIKE '%(SAMPLE)'")[0].n, 0)
+})
+
+test('building: a closed unit with a visitor still in stays on the list after the open units, marked closed, and counts in the total', async () => {
+  const donna = await token(PIN.donna)
+  const carl = await token(PIN.carl)
+  await visitor('r_agnes') // Cove unit at 3:00 PM: in until 7:00 PM
+  for (const id of ['r_agnes', 'r_bill']) {
+    assert.equal((await call('PUT', `/api/settings/residents/${id}`, { token: donna, body: { active: false }, now: nl('15:01') })).status, 200)
+  }
+  assert.equal((await call('PUT', '/api/settings/units/u_cove', { token: donna, body: { active: false }, now: nl('15:02') })).status, 200)
+  const b = await building(carl, nl('15:03'))
+  assert.deepEqual(b.units.map((u) => [u.id, u.active, u.count]), [['u_harbour', true, 0], ['u_lighthouse', true, 0], ['u_cove', false, 1]])
+  assert.equal(b.total, 1, 'the visitor on the closed unit is counted')
+  const [agnes] = unitOf(b, 'u_cove').visits
+  assert.equal(agnes.resident.name, 'Agnes D. (SAMPLE)')
+  const bay = await call('POST', '/api/settings/units', { token: donna, body: { name: 'Bay unit', hours: [{ open: '00:00', close: '24:00' }] }, now: nl('15:04') })
+  assert.equal(bay.status, 201)
+  assert.deepEqual((await building(carl, nl('15:04'))).units.map((u) => u.id), ['u_harbour', 'u_lighthouse', bay.body.id, 'u_cove'], 'open units first, then closed ones')
+  assert.equal((await call('POST', `/api/staff/visits/${agnes.id}/signout`, { token: carl, now: nl('15:05') })).status, 200)
+  const after = await building(carl, nl('15:06'))
+  assert.deepEqual([after.units.map((u) => u.id), after.total], [['u_harbour', 'u_lighthouse', bay.body.id], 0], 'once nobody is in, the closed unit leaves the list')
 })

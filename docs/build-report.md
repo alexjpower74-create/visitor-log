@@ -81,6 +81,31 @@ Notes from the slices' reports that belong in the record:
 - vl1 found the lead's journey spec failing at the roll-call step: `getByText(/1 of 1 found/)` matched two elements (strict mode).
   Narrowed to `#roll-call-progress` (bccf7ff). Its untracked run of the fixed journey passed in both tablet engines.
 
+### 4. main `bccf7ff` (vl1 M3 visitor pages + the first journey fix), 18:57
+
+First run of the whole Playwright suite and of every control. Command as QA 3, plus `npx playwright test` (all specs), the visitor
+controls (`NEG_PORT=8409`) and `tests/journey/negative-journey.mjs`.
+
+| Suite | Passed | Failed | Skipped |
+|---|---|---|---|
+| Worker unit / empty D1 / API / first setup | 26 / 1 / 49 / 1 | 0 | 0 |
+| Worker negative controls (a–l + q closed-unit-hidden) | 13 red of 13 | | |
+| Playwright, all specs (chromium-390 34, webkit-390 34, chromium-tablet 27, webkit-tablet 27) | 122 | 0 | 0 |
+| Staff page negative controls | 8 red of 8 | | |
+| Visitor page negative controls (stale-notice, yes-posts, overlay, forget-me, header-covers) | 5 red of 5 | | |
+| **Journey negative control** | **stayed green** | | |
+
+**The journey's check measured nothing.** The control gives every resident every notice in a Worker copy; the journey still passed.
+The visitor page draws `unit_notices` as the API sends them, so the break did reach the page. The journey's step 7 asserted
+`getByText(OUTBREAK)` count 0 *before* anything proved Frank's details had loaded, so it passed on a page that had not drawn them yet.
+Fix 1 (`6b5bbb8`): assert `#resident-name` is "Frank O. (SAMPLE)" and `#sign-in` is enabled (the page sets both in the same step that
+draws the unit's notices), then the zero count. Re-run at `6b5bbb8`: **the control went red exactly at that line** (114).
+The same fix made step 13 honest, and it then failed in both engines for two real reasons in the spec: Chromium's `fill` on the day-log
+date raced the tab's first load (which set the date back to today: 0 rows), and in WebKit the clock jump of a month had expired the
+desk's 12-hour staff session, so the page was correctly back at the keypad. Fix 2 waits for the heading of today before moving, taps
+Previous (real input), signs the desk in again after the jump, and waits for the "Mon Sep 14" heading (drawn from the answer with its
+rows) before counting zero rows.
+
 ### Cross-review rounds (defects found across the slice boundary)
 
 - **vl1 read vl2's M1 pages** (before its M2): every request body and query matched; three Worker-side calls taken from it

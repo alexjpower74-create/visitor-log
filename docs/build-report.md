@@ -104,7 +104,8 @@ The same fix made step 13 honest, and it then failed in both engines for two rea
 date raced the tab's first load (which set the date back to today: 0 rows), and in WebKit the clock jump of a month had expired the
 desk's 12-hour staff session, so the page was correctly back at the keypad. Fix 2 waits for the heading of today before moving, taps
 Previous (real input), signs the desk in again after the jump, and waits for the "Mon Sep 14" heading (drawn from the answer with its
-rows) before counting zero rows.
+rows) before counting zero rows. Re-run pinned at `516a3e2` (19:04): **journey 2 passed** (chromium-tablet 13.6 s, webkit-tablet
+19.5 s), **journey negative control red as intended** at `await expect(grace.getByText(OUTBREAK)).toHaveCount(0)`.
 
 ### Cross-review rounds (defects found across the slice boundary)
 

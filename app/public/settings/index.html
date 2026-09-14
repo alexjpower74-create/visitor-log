@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en-CA">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Settings · Visitor log</title>
+  <link rel="stylesheet" href="/theme.css">
+  <link rel="stylesheet" href="/common/style.css">
+  <link rel="stylesheet" href="/settings/settings.css">
+  <script src="/vendor/qrcode.js"></script>
+  <script type="module" src="/settings/settings.js"></script>
+</head>
+<body class="staff-app">
+  <div class="aurora" aria-hidden="true"></div>
+
+  <header class="app-header" data-sticky-header>
+    <div class="inner">
+      <div id="header-home" class="home-line"><span class="home-name">Visitor log</span></div>
+      <div class="who-line no-print">
+        <span class="clock" id="clock"></span>
+        <span class="who" id="who-name"></span>
+        <a class="button" id="staff-link" href="/staff/">Staff pages</a>
+        <button type="button" id="settings-signout" hidden>Sign out</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div id="signin" hidden></div>
+    <p id="load-error" class="field-error" role="alert"></p>
+
+    <div id="app" hidden>
+      <h1 class="page-title">Settings</h1>
+      <div id="tabs" class="no-print" aria-label="Settings"></div>
+
+      <!-- Notices -->
+      <section id="panel-notices" role="tabpanel" aria-labelledby="tab-notices" hidden>
+        <form id="notice-form" class="card" novalidate>
+          <h2>Add a notice</h2>
+          <p class="muted small form-intro">Visitors see notices when they sign in, and staff see them on each unit.</p>
+          <div class="form-grid">
+            <div class="field">
+              <label for="notice-unit">Where</label>
+              <select id="notice-unit" name="unit_id"><option value="">Whole home</option></select>
+            </div>
+            <div class="field">
+              <label for="notice-severity">Kind</label>
+              <select id="notice-severity" name="severity">
+                <option value="info">Notice</option>
+                <option value="restricted">Visiting restricted</option>
+                <option value="outbreak">Outbreak</option>
+              </select>
+              <p id="notice-severity-help" class="hint"></p>
+              <p class="field-error" data-error-for="severity" role="alert"></p>
+            </div>
+          </div>
+          <div class="field">
+            <label for="notice-message">Message <span class="hint">Your words. Visitors see them exactly as you write them.</span></label>
+            <textarea id="notice-message" name="message" maxlength="300"></textarea>
+            <p class="field-error" data-error-for="message" role="alert"></p>
+          </div>
+          <p id="notice-error" class="field-error" role="alert"></p>
+          <div class="row-flex">
+            <button type="submit" id="notice-add" class="primary">Add notice</button>
+            <span id="notice-status" class="status-line" role="status"></span>
+          </div>
+        </form>
+        <div class="section-title"><h2>Notices</h2><span class="muted small">Newest first. Only notices that are On are shown.</span></div>
+        <div id="notice-list" class="settings-list"></div>
+      </section>
+
+      <!-- Screening -->
+      <section id="panel-screening" role="tabpanel" aria-labelledby="tab-screening" hidden>
+        <form id="screening-form" class="card" novalidate>
+          <div class="switch-row">
+            <button type="button" id="screening-enabled" role="switch" aria-checked="false" class="switch">
+              <span class="switch-track" aria-hidden="true"><span class="switch-thumb"></span></span>
+              <span class="switch-label">Ask visitors screening questions</span>
+              <span class="switch-state">Off</span>
+            </button>
+          </div>
+          <p class="muted small form-intro">A visitor who answers Yes to any question can't sign in and sees your message. The answers are never saved.</p>
+          <div class="example-actions">
+            <button type="button" id="use-example">Use the example</button>
+            <p id="example-label" class="example-label" hidden></p>
+          </div>
+          <h3>Questions</h3>
+          <div id="question-list" class="question-list"></div>
+          <p class="field-error" data-error-for="questions" role="alert"></p>
+          <button type="button" id="question-add">Add a question</button>
+          <div class="field stop-field">
+            <label for="screening-stop">What should a visitor who answers Yes do?</label>
+            <textarea id="screening-stop" name="stop_message" maxlength="300"></textarea>
+            <p class="field-error" data-error-for="stop_message" role="alert"></p>
+          </div>
+          <p id="screening-error" class="field-error" role="alert"></p>
+          <div class="row-flex">
+            <button type="submit" id="screening-save" class="primary">Save</button>
+            <span id="screening-status" class="status-line" role="status"></span>
+          </div>
+        </form>
+      </section>
+
+      <!-- Visits and privacy -->
+      <section id="panel-visits" role="tabpanel" aria-labelledby="tab-visits" hidden>
+        <form id="visits-form" class="card" novalidate>
+          <h2>Visits and privacy</h2>
+          <p id="retention-line" class="retention-line"></p>
+          <div class="form-grid">
+            <div class="field">
+              <label for="retention-days">Keep visitor records for (days)</label>
+              <input type="number" id="retention-days" name="retention_days" min="1" max="365" inputmode="numeric">
+              <p class="field-error" data-error-for="retention_days" role="alert"></p>
+            </div>
+            <div class="field">
+              <label for="max-visitors">Visitors per resident at one time <span class="hint">Leave blank for no limit</span></label>
+              <input type="number" id="max-visitors" name="max_visitors_per_resident" min="1" max="20" inputmode="numeric">
+              <p class="field-error" data-error-for="max_visitors_per_resident" role="alert"></p>
+            </div>
+            <div class="field">
+              <label for="home-phone">Home phone number</label>
+              <input type="tel" id="home-phone" name="phone" inputmode="tel">
+              <p class="field-error" data-error-for="phone" role="alert"></p>
+            </div>
+          </div>
+          <div class="field">
+            <label for="after-hours-message">Message outside visiting hours</label>
+            <textarea id="after-hours-message" name="after_hours_message" maxlength="300"></textarea>
+            <p class="field-error" data-error-for="after_hours_message" role="alert"></p>
+          </div>
+          <div class="field">
+            <label for="desk-message">Where to send visitors who can't sign themselves in</label>
+            <textarea id="desk-message" name="desk_message" maxlength="300"></textarea>
+            <p class="field-error" data-error-for="desk_message" role="alert"></p>
+          </div>
+          <p id="visits-error" class="field-error" role="alert"></p>
+          <div class="row-flex">
+            <button type="submit" id="visits-save" class="primary">Save</button>
+            <span id="visits-status" class="status-line" role="status"></span>
+          </div>
+        </form>
+      </section>
+
+      <!-- Units and hours -->
+      <section id="panel-units" role="tabpanel" aria-labelledby="tab-units" hidden>
+        <div id="unit-list" class="settings-list"></div>
+        <form id="unit-form" class="card form-after-list" novalidate>
+          <h2 id="unit-form-title">Add a unit</h2>
+          <div class="field">
+            <label for="unit-name">Unit name</label>
+            <input type="text" id="unit-name" name="name" maxlength="40" autocomplete="off">
+            <p class="field-error" data-error-for="name" role="alert"></p>
+          </div>
+          <h3>Visiting hours <span class="hint">The same every day. An end of 12:00 AM means midnight.</span></h3>
+          <div id="unit-windows" class="windows"></div>
+          <p class="field-error" data-error-for="hours" role="alert"></p>
+          <div class="row-flex">
+            <button type="button" id="window-add">Add a time</button>
+            <button type="button" id="unit-all-day">Open all day</button>
+          </div>
+          <p id="unit-error" class="field-error" role="alert"></p>
+          <div class="row-flex form-buttons">
+            <button type="submit" id="unit-save" class="primary">Save</button>
+            <button type="button" id="unit-cancel" hidden>Cancel</button>
+            <span id="unit-status" class="status-line" role="status"></span>
+          </div>
+        </form>
+      </section>
+
+      <!-- Residents -->
+      <section id="panel-residents" role="tabpanel" aria-labelledby="tab-residents" hidden>
+        <form id="resident-form" class="card" novalidate>
+          <h2 id="resident-form-title">Add a resident</h2>
+          <p class="muted small form-intro">Only a first name, last initial and room. Don't add health information.</p>
+          <div class="form-grid">
+            <div class="field">
+              <label for="resident-first">First name</label>
+              <input type="text" id="resident-first" name="first_name" maxlength="30" autocomplete="off">
+              <p class="field-error" data-error-for="first_name" role="alert"></p>
+            </div>
+            <div class="field">
+              <label for="resident-initial">Last initial</label>
+              <input type="text" id="resident-initial" name="last_initial" maxlength="1" autocomplete="off">
+              <p class="field-error" data-error-for="last_initial" role="alert"></p>
+            </div>
+            <div class="field">
+              <label for="resident-room">Room</label>
+              <input type="text" id="resident-room" name="room" maxlength="10" autocomplete="off">
+              <p class="field-error" data-error-for="room" role="alert"></p>
+            </div>
+            <div class="field">
+              <label for="resident-unit">Unit</label>
+              <select id="resident-unit" name="unit_id"></select>
+              <p class="field-error" data-error-for="unit_id" role="alert"></p>
+            </div>
+          </div>
+          <label class="check" for="resident-arrangement">
+            <input type="checkbox" id="resident-arrangement" name="by_arrangement">
+            Visits by arrangement only
+          </label>
+          <p class="hint">Visitors are sent to the nurse's desk instead of signing themselves in.</p>
+          <p id="resident-error" class="field-error" role="alert"></p>
+          <div class="row-flex form-buttons">
+            <button type="submit" id="resident-save" class="primary">Save</button>
+            <button type="button" id="resident-cancel" hidden>Cancel</button>
+            <span id="resident-status" class="status-line" role="status"></span>
+          </div>
+        </form>
+        <div class="section-title"><h2>Residents</h2><span id="resident-count" class="muted small"></span></div>
+        <div id="resident-list" class="settings-list"></div>
+      </section>
+
+      <!-- Staff -->
+      <section id="panel-staff" role="tabpanel" aria-labelledby="tab-staff" hidden>
+        <div id="staff-list" class="settings-list"></div>
+        <form id="staff-form" class="card form-after-list" novalidate>
+          <h2 id="staff-form-title">Add a staff member</h2>
+          <div class="form-grid">
+            <div class="field">
+              <label for="staff-name">Name</label>
+              <input type="text" id="staff-name" name="name" maxlength="60" autocomplete="off">
+              <p class="field-error" data-error-for="name" role="alert"></p>
+            </div>
+            <div class="field">
+              <label for="staff-role">Role</label>
+              <select id="staff-role" name="role">
+                <option value="staff">Staff</option>
+                <option value="manager">Manager (can change settings)</option>
+              </select>
+              <p class="field-error" data-error-for="role" role="alert"></p>
+            </div>
+            <div class="field">
+              <label for="staff-pin">PIN <span class="hint" id="staff-pin-hint">4 to 6 digits, different for each person</span></label>
+              <input type="text" id="staff-pin" name="pin" inputmode="numeric" autocomplete="off" maxlength="6">
+              <p class="field-error" data-error-for="pin" role="alert"></p>
+            </div>
+          </div>
+          <p id="staff-error" class="field-error" role="alert"></p>
+          <div class="row-flex form-buttons">
+            <button type="submit" id="staff-save" class="primary">Save</button>
+            <button type="button" id="staff-cancel" hidden>Cancel</button>
+            <span id="staff-status" class="status-line" role="status"></span>
+          </div>
+        </form>
+      </section>
+
+      <!-- Door sign -->
+      <section id="panel-door-sign" role="tabpanel" aria-labelledby="tab-door-sign" hidden>
+        <div class="card door-preview-card">
+          <div class="door-preview" aria-label="Door sign preview">
+            <p class="door-preview-home"></p>
+            <p class="door-preview-title">Visitors: please sign in and out</p>
+            <canvas class="qr-preview"></canvas>
+            <p class="door-preview-url"></p>
+          </div>
+          <div class="stack">
+            <h2>Door sign</h2>
+            <p class="muted">Print this and put it at the door. Visitors point their phone's camera at the code to sign in and out. No app needed.</p>
+            <a class="button primary" id="door-sign-link" href="/settings/door-sign/">Open the door sign to print</a>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</body>
+</html>

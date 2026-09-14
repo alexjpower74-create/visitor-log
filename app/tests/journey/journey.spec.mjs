@@ -71,7 +71,7 @@ test('a whole day: sign in, roll call, sign out, an outbreak notice on one unit,
   await expect(desk.locator('#roll-call-progress')).toContainText('1 of 1 found')
   await tap(desk, desk.locator('#end-roll-call'), 'End roll call')
   await tap(desk, desk.locator('#confirm-end-roll-call'), 'confirm end')
-  await expect(desk.getByText(/1 of 1 found/)).toBeVisible()
+  await expect(desk.locator('#roll-call-progress')).toContainText('1 of 1 found')
 
   // 4. Linda signs out on her phone on the way out; the desk count drops.
   await setNow(lindaCtx, T.out)

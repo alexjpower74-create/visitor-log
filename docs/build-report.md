@@ -7,7 +7,40 @@ tree. Pass/fail comes from each command's own exit code, echoed inside the run.
 
 ## Final QA
 
-_Not run yet._
+**DONE.** One run, pinned to main `db8e38d` (every slice round merged), nothing re-run to get green. Commits after `db8e38d` are
+documentation and screenshots only. Command: `rig qa --ref db8e38d --port 8409 --run '…'`, finished 19:53; every stage runs whatever
+the previous one did and echoes its own exit code; the QA worktree's `git status` was shown and its tracked logs restored first.
+
+| Suite | Command (from the QA worktree) | Passed | Failed | Skipped |
+|---|---|---|---|---|
+| Worker unit (csv, hours, retention, rules, time) | `cd worker && PORT=8409 npm test` | 26 | 0 | 0 |
+| Worker on an empty D1 | same run | 1 | 0 | 0 |
+| Worker API M1 + count property + M2 + M3 (`wrangler dev --local`, `TEST_MODE`) | same run | 49 | 0 | 0 |
+| Worker first setup (the tool's SQL, Worker **without** `TEST_MODE`) | same run | 1 | 0 | 0 |
+| Playwright, every spec | `cd app && E2E_PORT=8409 npx playwright test` | 200 | 0 | 0 |
+| Worker negative controls | `cd worker && NEG_PORT=8409 npm run negative` | 13 red of 13 | | |
+| Staff page negative controls | `cd app && NEG_PORT=8409 node tests/staff/negative-all.mjs` | 15 red of 15 | | |
+| Visitor page negative controls | `cd app && NEG_PORT=8409 node tests/visit/negative-all.mjs` | 6 red of 6 | | |
+| Journey negative control | `cd app && E2E_PORT=8409 node tests/journey/negative-journey.mjs` | 1 red of 1 | | |
+
+Playwright by project: chromium-390 visit 9 + staff 45; webkit-390 visit 9 + staff 45; chromium-tablet staff 45 + journey 1;
+webkit-tablet staff 45 + journey 1. `WORKER_EXIT`, `WORKER_NEGATIVE_EXIT`, `E2E_EXIT`, `STAFF_NEGATIVE_EXIT`, `VISIT_NEGATIVE_EXIT`,
+`JOURNEY_NEGATIVE_EXIT` and `rig qa` all 0; no connection errors in the Worker controls' output; QA ports free after.
+
+### Negative controls (35, each breaks a copy in `.negative/`, never the shipped code, and must go red)
+
+- **Worker (13):** `notice-unit` (every notice for every resident), `screening` (a "yes" ignored), `auto-out` (a passed closing never
+  signs anyone out: the across-midnight count and the 200-event property), `retention-setting` (always 30 days), `retention-boundary`
+  (deletes at age = retention), `link-expiry` (link cut at UTC midnight), `hours-close` (the close minute counted as open), `csv-guard`,
+  `rollcall-after-start` (only visits in at the start), `last-manager`, `ratelimit`, `contacts-unit` (unit filter ignored),
+  `closed-unit-hidden` (a closed unit with a visitor still in drops out of the fire-drill total).
+- **Staff pages (15):** `stale-total`, `no-overdue`, `overlay` (a cover over Sign out), `notice-unit` (Whole home sends a unit),
+  `example-saves`, `header-see-through`, `time-wraps`, `stacked-buttons`, `local-tick` (a roll call tick that never reaches another
+  phone), `csv-stale-unit`, `qr-wrong-path` (the door QR opens the staff page), `closed-ignores-active`, `total-starts-at-zero`,
+  `contacts-keeps-rows`, `name-cut`.
+- **Visitor pages (6):** `stale-notice` (the last resident's notice stays), `yes-posts` (a "Yes" sends the sign-in), `overlay`,
+  `forget-me`, `header-covers`, `stop-stays` (a Yes changed to No keeps the stop message).
+- **Journey (1):** every notice for every resident in a Worker copy → the whole-day journey goes red at Frank's no-outbreak check.
 
 ## QA history
 

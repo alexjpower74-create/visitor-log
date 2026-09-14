@@ -51,7 +51,30 @@ Then open:
 
 ## Tests
 
-_Filled in from the final QA run (pinned sha, one run, nothing re-run). Until then this section is not a result._
+Final QA, one run pinned to main `db8e38d` in a separate worktree, nothing re-run (details and every negative control in
+`docs/build-report.md`):
+
+| Suite | Passed | Failed | Skipped |
+|---|---|---|---|
+| Worker: unit 26, empty database 1, API 49, first setup without `TEST_MODE` 1 | 77 | 0 | 0 |
+| Playwright (real taps and typing; chromium + webkit): visitor pages at 390 (18), staff pages and settings at 390 and tablet 1024×768 (180), the whole-day journey on tablet (2) | 200 | 0 | 0 |
+| Negative controls (break a copy, the check must go red): Worker 13, staff pages 15, visitor pages 6, journey 1 | 35 red of 35 | | |
+
+What the tests that matter prove: an outbreak notice on one unit reaches only that unit's visitors (and the journey's check went red
+when the Worker was broken to send it to everyone); a screening "Yes" stops the sign-in on the phone and nothing is sent or stored;
+the in-building count equals sign-ins minus sign-outs across automatic sign-out at closing and at midnight (200 random events over 3
+days); visits older than the retention setting are deleted from the database and never shown (fake clock, the boundary day and a
+changed setting each have a control).
+
+```
+cd worker && npm test                                # unit + empty D1 + API against wrangler dev --local + first setup
+cd worker && npm run negative                        # the 13 Worker negative controls (each must go red)
+cd app && npm install && npx playwright install chromium webkit
+cd app && E2E_PORT=8409 npx playwright test          # visitor pages, staff pages and settings, the whole-day journey
+cd app && node tests/staff/negative-all.mjs          # 15 staff page controls
+cd app && node tests/visit/negative-all.mjs          # 6 visitor page controls
+cd app && E2E_PORT=8408 node tests/journey/negative-journey.mjs
+```
 
 ## What deploying needs
 

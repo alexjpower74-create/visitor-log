@@ -364,3 +364,99 @@ server's 403 carries the same words), so only the no-POST check can catch it.
    run landed in `app/tests/journey/shots/` in this worktree; I deleted them, uncommitted.
 2. **`GET /api/visitor/start` → `screening.stop_message`** needs a line in API.md (committed in `0be21fb`; see the contract
    addition above).
+
+## After M3
+
+### The pressed button's corners on the stop screen (DONE)
+
+The lead saw a square darker fill behind the pressed "Yes" at its rounded corners. Enlarging the corners of `07-stop` 5× showed two
+separate things:
+1. **In chromium, a square fill:** the browser's tap highlight (`-webkit-tap-highlight-color`), painted over the button's
+   rectangle right after a real tap, so it ignores `border-radius`.
+2. **In both engines, a faint double ring at the curve:** my pressed style, an inset `box-shadow` just inside the border,
+   leaving a sliver of the dark ground between the two.
+
+Fix in `visit/visit.css`: no tap highlight on the visitor pages' buttons, resident buttons and links. The pressed state is now a
+tinted fill plus a 3 px accent border, both clipped by the radius; the padding shrinks by the extra 2 px, so the button keeps its
+size. `:active` is a light tint, also inside the shape. The visitor suite is green again, **16/16** in chromium-390 and
+webkit-390, and it re-took `07-stop` in both engines. Enlarged again, the corners now show one clean rounded border with the fill
+inside it, and no square or double ring in either engine.
+
+## Cross-review of vl2 M2 (hands-on)
+
+**How.** Read-only against vl2's files. On my port 8402 I ran `wrangler dev --local --var TEST_MODE:1`, seeded with
+`POST /api/test/seed {"scenario":"demo"}` at Mon Sep 14, 3:00 PM, and drove `/staff/` and `/settings/` with a throwaway Playwright
+script inside my worktree (deleted afterwards, never committed). The script used the lead's `tap`, `type` and `keypad` helpers for
+real taps and typing. It ran on the desk tablet (1024×768) and a phone (390), in chromium and webkit, re-seeding before each part,
+and compared what the page showed with the API. 117 checks per engine; the results were the same in both engines apart from timings.
+I looked at the screenshots, not only the checks.
+
+### Findings
+
+1. **A closed unit with a visitor still in shows a green "Open" pill, and no "Unit closed" card yet.**
+   - *Steps:* seed; as the manager, `PUT /api/settings/residents/r_agnes` and `r_bill` `{ active: false }`, then
+     `PUT /api/settings/units/u_cove { active: false }` (the API then lists Cove with `active: false`, count 1); sign in on
+     `/staff/` with 2580.
+   - *Saw (both engines, tablet and phone):* the Cove card is there, with count 1, the visitor's row and Sign out, and
+     `#building-total` is 5, matching the API; so nobody is hidden, as decided. But the card has no closed marking, and its pill
+     reads **"Open"**, because `open_now` follows Cove's visiting hours (10:00 AM to 7:00 PM) regardless of `active`. In a fire
+     drill the card for a closed unit says "Open". The lead said vl2 is adding "Unit closed" now: **it is not on main yet
+     (f29980d..bccf7ff)**. When it lands, the pill should not say "Open" on a closed unit.
+2. **"0 in the building" shows before the first answer.**
+   - *Steps:* sign in on `/staff/` and read `#building-total` as soon as the In the building tab appears.
+   - *Saw:* "0 in the building". The HTML ships `<span class="total-number">0</span> in the building` as its starting text, which
+     stays until the first `GET /api/staff/building` returns; then it shows the right total (5). Locally that is a moment. On a
+     slow desk tablet, or when the Worker cannot be reached, the page states a count of zero, the one number a fire drill must
+     never guess. A placeholder with no number (for example "…") until the first answer would avoid it. (My script first flagged
+     this as "the total doesn't include a manual sign-in"; that was my own early read. After a manual sign-in the total was right:
+     5 seeded plus Ellen made 6.)
+3. **After a refused Show, the contact list keeps the previous results under the new dates.**
+   - *Steps:* Contact list; From 2026-09-01, To 2026-09-14, unit Lighthouse wing, Show (31 visits); then set From after To (or
+     clear From) and tap Show.
+   - *Saw (both engines, tablet and phone):* the API's words appear correctly under the field ("The end date is before the start
+     date." under To; "Pick a real date." under From), but the table and "31 visits" from the earlier query stay on screen under
+     dates that no longer match them. A person could read or print that list as the result for the dates shown. Clearing (or
+     greying) the table when a query is refused would avoid it.
+4. **Minor, phone header:** at 390 the home name is cut to "SAMPLE Harbourview Care Home (d…", and on Settings the manager's name
+   is cut to "Donna R. (S…". The SAMPLE badge itself stays visible, but the "(SAMPLE)" on the person's name is lost.
+
+### Checked and right (both engines, 1024 and 390)
+
+- **In the building:** `#building-total` and every `.unit-count` match the API; the overdue Harbour visitor shows "Overdue since
+  11:30 AM". A sign-out by taps ("Sign out", then "Yes, sign out"; "Cancel" leaves the row) removes the row, and the total and the
+  unit count drop at once and match the API.
+- **Roll call from two devices:** started on the tablet ("0 of 5 found"); a tick on Amira's phone reached the tablet within one
+  poll (2.8 s chromium, 2.3 s webkit), with "Found by Amira H. (SAMPLE) at 3:00 PM". Both devices tapping Found on the same person
+  at the same moment counted once: the API, the tablet and the phone all said 2. A sign-in after the start appeared with "Came in
+  after the roll call started"; the phone's building banner read "Roll call going: 2 of 6 found". After End, the phone showed
+  "Ended 3:05 PM · 2 of 5 found" and every tick was disabled.
+- **Day log:** today (7) and Previous (Sep 13, 5) match the API; the unit filter narrows it; Out cells read "10:11 AM Staff",
+  "9:00 PM Auto".
+- **Contact list:** Show gives the API's count (31); the retention line is right. **Download CSV by a real tap gave the API's CSV
+  byte for byte (3733 bytes) with the same filename**, `visitor-contacts-u_lighthouse-2026-09-01-to-2026-09-14.csv`.
+- **Sign someone in:** nothing filled in → "Please pick who they are visiting." under the picker (the API's new check order); no
+  name → "Please type their name." under the name; a bad phone → the API's words under the phone; Ellen with no phone → "Signed in
+  Walk-in Visitor (SAMPLE) at 3:00 PM" and the by-arrangement warning, with the old field errors cleared.
+- **Settings:** each API error lands under its own field:
+  - a staff PIN → "Only a manager can change the settings.";
+  - an empty notice → under the message;
+  - screening on with no questions → under the questions;
+  - retention 0 → under retention;
+  - a taken unit name → under the name;
+  - overlapping windows → under the hours;
+  - a taken PIN → under the PIN;
+  - closing Harbour wing (it has residents) → its row;
+  - turning off the last manager → its row.
+
+  A restricted notice for Harbour reached the visitor API. "Use the example" saved nothing. Retention 14 updated the line and
+  `/api/info`, and cleared the old error. A second window closing at 00:00 was saved as "6:00 PM to midnight". A lower-case
+  initial was saved upper case and found by the visitor search.
+- **Words from PLAN.md, all present:**
+  - the keypad: "Staff sign in", "Enter", "Clear", "That PIN is not right.";
+  - the staff tabs and their buttons: "In the building", "Roll call", "Day log", "Contact list", "Sign someone in",
+    "Start roll call", "End roll call", "Found", "Not found yet", "All units", "Show", "Download CSV";
+  - after closing: "Signed out automatically at closing today (not confirmed)" and "Nobody is signed in on this unit.";
+  - the settings tabs: "Notices", "Screening", "Visits and privacy", "Units and hours", "Residents", "Staff", "Door sign";
+  - the notice pickers: "Whole home", "Notice", "Visiting restricted", "Outbreak".
+
+Servers: the Worker I started on 8402 was stopped afterwards and its `.state-dev` removed.

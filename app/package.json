@@ -1,0 +1,20 @@
+{
+  "name": "visitor-log-app",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "test:visit": "playwright test tests/visit",
+    "test:staff": "playwright test tests/staff",
+    "test:journey": "playwright test tests/journey",
+    "negative:visit": "node tests/visit/negative-all.mjs",
+    "negative:staff": "node tests/staff/negative-all.mjs",
+    "negative:journey": "node tests/journey/negative-journey.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "jsqr": "1.4.0",
+    "pngjs": "7.0.0",
+    "qrcode-generator": "2.0.4"
+  }
+}

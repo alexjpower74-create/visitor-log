@@ -81,6 +81,19 @@ Notes from the slices' reports that belong in the record:
 - vl1 found the lead's journey spec failing at the roll-call step: `getByText(/1 of 1 found/)` matched two elements (strict mode).
   Narrowed to `#roll-call-progress` (bccf7ff). Its untracked run of the fixed journey passed in both tablet engines.
 
+### Cross-review rounds (defects found across the slice boundary)
+
+- **vl1 read vl2's M1 pages** (before its M2): every request body and query matched; three Worker-side calls taken from it
+  (a unit's own name, the last-manager guard on a role change, date and unit fields).
+- **vl2 read vl1's M1 Worker** (before its M2): two staff sign-in mismatches (resident not checked first; the visitor's wording on
+  the staff name). Both were already fixed in vl1 M2.
+- **vl1 drove vl2's M2 pages against the real Worker** (18:46–18:56, merged 6c3d0bb), both engines at 1024 and 390, 117 checks per
+  engine. Right: counts, overdue, a roll call ticked from two phones at the same moment counted once, day log, CSV byte for byte,
+  every field error, every PLAN.md word. **Four defects a person would hit, routed to vl2 as M4:** (1) a closed unit with a visitor
+  still in shows a green "Open" pill; (2) "0 in the building" shows before the first answer, a guessed zero on a slow tablet; (3) a
+  refused Show leaves the previous contact list under the new dates; (4) the 390 header cuts "(SAMPLE)" off the staff name.
+- **The lead's journey spec** was run by vl1 and failed at a strict-mode locator on the roll call page; fixed (bccf7ff).
+
 ## Contract changes made during the build
 
 - vl2 asked what a staff sign-in with no resident returns → API.md: 400 `field: "resident_id"`, checked first (6be6cde).

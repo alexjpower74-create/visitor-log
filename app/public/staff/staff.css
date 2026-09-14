@@ -23,6 +23,9 @@
   color: var(--text);
 }
 
+.building-notices { margin-bottom: 14px; }
+.building-notices > * + * { margin-top: 8px; }
+
 .unit-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));

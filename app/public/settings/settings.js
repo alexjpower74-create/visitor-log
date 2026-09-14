@@ -1,7 +1,7 @@
 // Settings (manager only): Notices, Screening, Visits and privacy, Units and hours, Residents, Staff, Door sign.
 // Every write answers with the whole settings object (docs/API.md); lists re-render from it, forms being typed in are left alone.
 import * as api from '/common/api.js'
-import { h, $, $$, plural, noticeCard, homeLine, mountTabs, clearErrors, showError, confirmBox, poller, fillSelect } from '/common/ui.js'
+import { h, $, $$, plural, noticeCard, homeLine, paintClock, collapsedSection, mountTabs, clearErrors, showError, confirmBox, poller, fillSelect } from '/common/ui.js'
 import { mountKeypad } from '/common/keypad.js'
 import { drawQr } from '/common/qr.js'
 
@@ -36,7 +36,7 @@ let settings = null
 let tabs = null
 let keypad = null
 
-const setClock = (i) => { $('#clock').textContent = i ? `${i.date_label} · ${i.time_label}` : '' }
+const setClock = (i) => paintClock($('#clock'), i?.date_label, i?.time_label)
 async function loadInfo() {
   info = await api.get('/api/info')
   $('#header-home').replaceWith(Object.assign(homeLine(info), { id: 'header-home' }))
@@ -318,13 +318,13 @@ $('#visits-form').addEventListener('submit', async (e) => {
 let editingUnit = null
 
 function renderUnits() {
-  $('#unit-list').replaceChildren(...settings.units.map((u) => {
+  const unitRow = (u) => {
     const error = h('p', { class: 'row-error', role: 'alert' })
     const slot = h('div', { class: 'row-slot', style: 'flex-basis:100%' })
     const edit = h('button', { type: 'button', class: 'unit-edit' }, 'Change')
     const close = u.active
       ? h('button', { type: 'button', class: 'unit-close' }, 'Close this unit')
-      : h('button', { type: 'button', class: 'unit-reopen' }, 'Open it again')
+      : h('button', { type: 'button', class: 'unit-reopen' }, 'Put back')
     const row = h('div', { class: `list-row${u.active ? '' : ' inactive'}`, 'data-unit-row': u.id },
       h('div', { class: 'grow' },
         h('p', {}, h('strong', {}, u.name), u.active ? null : h('span', { class: 'pill', style: 'margin-left:8px' }, 'Closed')),
@@ -343,7 +343,10 @@ function renderUnits() {
       }))
     })
     return row
-  }))
+  }
+  const list = [...settings.units.filter((u) => u.active).map(unitRow),
+    collapsedSection('units-closed', 'Closed', settings.units.filter((u) => !u.active).map(unitRow))]
+  $('#unit-list').replaceChildren(...list.filter(Boolean))
 }
 
 async function putUnit(id, body, errorEl) {
@@ -447,20 +450,25 @@ let editingResident = null
 function renderResidents() {
   fillSelect($('#resident-unit'), activeUnits().map((u) => h('option', { value: u.id }, u.name)))
   const active = settings.residents.filter((r) => r.active)
+  const removed = settings.residents.filter((r) => !r.active)
   $('#resident-count').textContent = plural(active.length, 'resident')
-  if (!active.length) { $('#resident-list').replaceChildren(h('p', { class: 'muted' }, 'No residents yet.')); return }
-  $('#resident-list').replaceChildren(...active.map((r) => {
+  const residentRow = (r) => {
     const error = h('p', { class: 'row-error', role: 'alert' })
     const slot = h('div', { class: 'row-slot', style: 'flex-basis:100%' })
     const edit = h('button', { type: 'button', class: 'resident-edit' }, 'Change')
     const remove = h('button', { type: 'button', class: 'resident-remove' }, 'Remove')
+    const restore = h('button', { type: 'button', class: 'resident-restore' }, 'Put back')
+    restore.addEventListener('click', async () => {
+      restore.disabled = true
+      try { applySettings((await api.put(`/api/settings/residents/${encodeURIComponent(r.id)}`, { active: true })).settings) } catch (err) { error.textContent = err.message; restore.disabled = false }
+    })
     const row = h('div', { class: 'list-row', 'data-resident-row': r.id },
       h('div', { class: 'grow' },
         h('p', {}, h('strong', { class: 'resident-name' }, r.name)),
         h('div', { class: 'tags' },
           h('span', { class: 'muted' }, `Room ${r.room} · ${unitName(r.unit_id)}`),
           r.by_arrangement ? h('span', { class: 'pill staff-tag' }, 'By arrangement') : null)),
-      edit, remove, slot, error)
+      ...(r.active ? [edit, remove, slot] : [restore]), error)
     edit.addEventListener('click', () => startResidentEdit(r))
     remove.addEventListener('click', () => {
       remove.hidden = true
@@ -476,7 +484,10 @@ function renderResidents() {
       }))
     })
     return row
-  }))
+  }
+  const list = [...(active.length ? active.map(residentRow) : [h('p', { class: 'muted' }, 'No residents yet.')]),
+    collapsedSection('residents-removed', 'Removed', removed.map(residentRow))]
+  $('#resident-list').replaceChildren(...list.filter(Boolean))
 }
 
 function resetResidentForm() {
@@ -534,7 +545,7 @@ let editingStaff = null
 const ROLE_WORD = { manager: 'Manager', staff: 'Staff' }
 
 function renderStaff() {
-  $('#staff-list').replaceChildren(...settings.staff.map((m) => {
+  const staffRow = (m) => {
     const error = h('p', { class: 'row-error', role: 'alert' })
     const edit = h('button', { type: 'button', class: 'staff-edit' }, 'Change')
     const toggle = h('button', { type: 'button', class: 'staff-toggle' }, m.active ? 'Turn off' : 'Turn on')
@@ -542,7 +553,7 @@ function renderStaff() {
       h('div', { class: 'grow' },
         h('p', {}, h('strong', {}, m.name)),
         h('div', { class: 'tags' }, h('span', { class: 'muted' }, ROLE_WORD[m.role] || m.role), m.active ? null : h('span', { class: 'pill' }, 'Off: this PIN does not work'))),
-      edit, toggle, error)
+      m.active ? edit : null, toggle, error)
     edit.addEventListener('click', () => startStaffEdit(m))
     toggle.addEventListener('click', async () => {
       toggle.disabled = true
@@ -554,7 +565,10 @@ function renderStaff() {
       }
     })
     return row
-  }))
+  }
+  const list = [...settings.staff.filter((m) => m.active).map(staffRow),
+    collapsedSection('staff-off', 'Turned off', settings.staff.filter((m) => !m.active).map(staffRow))]
+  $('#staff-list').replaceChildren(...list.filter(Boolean))
 }
 
 function resetStaffForm() {

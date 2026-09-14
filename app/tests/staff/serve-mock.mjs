@@ -5,7 +5,8 @@ import { readFile, stat } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'public')
+// PUBLIC_DIR serves another copy of the pages (for example an older commit in app/.negative/, to show a smoke check going red).
+const ROOT = process.env.PUBLIC_DIR ? path.resolve(process.env.PUBLIC_DIR) : path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'public')
 const PORT = Number(process.env.PORT || 8401)
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.png': 'image/png', '.svg': 'image/svg+xml', '.txt': 'text/plain; charset=utf-8' }
 

@@ -78,8 +78,10 @@ for (const [engineName, engine] of [['chromium', chromium], ['webkit', webkit]])
       await page.keyboard.insertText('ag')
       await snap(page, `visitor-search-${tag}`)
       await page.locator('button.resident[data-resident="r_agnes"]').tap()
-      await page.locator('#unit-notices').waitFor()
-      await snap(page, `visitor-outbreak-notice-${tag}`)
+      // Her details drawn (the name is filled in when the answer arrives). Inside Cove unit's hours this is the outbreak notice
+      // with "I have read it"; after 7:00 PM it is the outside-hours refusal, which also shows the notice.
+      await page.locator('#resident-name').filter({ hasText: /\S/ }).waitFor()
+      await snap(page, `visitor-agnes-cove-outbreak-${tag}`)
       await context.close()
     }
   }

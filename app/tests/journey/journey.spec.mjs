@@ -170,18 +170,22 @@ test('a whole day: sign in, roll call, sign out, an outbreak notice on one unit,
   await setNow(context, T.nextDay)
   await totalIs(desk, 0)
 
-  // 13. The next day the Sep 14 day log still lists the day's three visits (Tom was never recorded)...
+  // 13. The next day the Sep 14 day log still lists the day's three visits (Tom was never recorded). Wait for the tab's first load to
+  // settle on today before moving, so it cannot overwrite the date afterwards.
   await tap(desk, desk.getByRole('tab', { name: 'Day log' }), 'Day log tab')
-  await desk.locator('#log-date').fill('2026-09-14')
-  await expect(desk.locator('[data-log-visit]')).toHaveCount(3, { timeout: 12_000 })
-  // ...and 31 days later they are gone. Reload Sep 14 under the new clock (Previous, then Next): the rows must fall from 3 to 0,
-  // so a screen that never reloaded cannot pass.
-  await setNow(context, T.pastRetention)
+  await expect(desk.locator('#log-heading')).toContainText('Tue Sep 15', { timeout: 12_000 })
   await tap(desk, desk.locator('#log-prev'), 'Previous day')
-  await expect(desk.locator('#log-date')).toHaveValue('2026-09-13')
-  await tap(desk, desk.locator('#log-next'), 'Next day')
-  await expect(desk.locator('#log-date')).toHaveValue('2026-09-14')
-  await expect(desk.locator('[data-log-visit]')).toHaveCount(0, { timeout: 12_000 })
+  await expect(desk.locator('#log-heading')).toContainText('Mon Sep 14', { timeout: 12_000 })
+  await expect(desk.locator('[data-log-visit]')).toHaveCount(3)
+  // 31 days later they are gone. The desk's 12-hour staff session has long expired, so the page is back at the keypad: sign in again.
+  await setNow(context, T.pastRetention)
+  await staffSignsIn(desk, STAFF_PIN)
+  await tap(desk, desk.getByRole('tab', { name: 'Day log' }), 'Day log tab')
+  await expect(desk.locator('#log-heading')).toContainText('Thu Oct 15', { timeout: 12_000 })
+  await desk.locator('#log-date').fill('2026-09-14')
+  // Positive first: the heading comes from the Sep 14 answer and is drawn with its rows, so zero rows below means zero visits.
+  await expect(desk.locator('#log-heading')).toContainText('Mon Sep 14', { timeout: 12_000 })
+  await expect(desk.locator('[data-log-visit]')).toHaveCount(0)
   const later = await staffToken(request, STAFF_PIN, { now: T.pastRetention })
   const contacts = await api(request, 'GET', '/api/staff/contacts?from=2026-09-14&to=2026-09-14&unit=all', undefined, bearer(later), { now: T.pastRetention })
   expect(contacts.body.count).toBe(0)

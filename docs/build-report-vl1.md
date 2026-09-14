@@ -108,3 +108,54 @@ The shipped code has no switch that turns any of these guards off.
 ### Needs from another slice
 
 None for M1.
+
+### Lead's answers to the M1 questions (DONE)
+
+1. Midnight numbers: PLAN.md now says 2 at 8:59 PM and 1 at 9:00 PM; events and assertions kept. 2. `created_label` format is in
+API.md. 3. The lenient inputs are now the contract. 4. My wording stands. 5–7 stand, except the staff sign-in check order, which
+changes in M2 (resident missing first).
+
+## Cross-review of vl2 M1 (read-only, before vl1 M2)
+
+Read on main after 3885c0c: `app/public/common/api.js`, `app/public/staff/staff.js`, `app/public/settings/settings.js`, plus
+`showError` in `common/ui.js` and the `name=` / `data-error-for=` attributes in `staff/index.html` and `settings/index.html`.
+Every request body and query was checked against docs/API.md and against my Worker (M1 routes) or the M2 routes I am about to
+build. I edited none of vl2's files.
+
+**Matches (DONE):**
+- `api.js`: Bearer token; JSON bodies; `POST` with `{}` for sign-out, roll call start/end and staff sign-out (the Worker accepts
+  `{}` or no body); a 401 clears the session except on `/api/signin`; `download()` parses `filename="visitor-contacts-….csv"`
+  from `Content-Disposition`, which is the header I will send.
+- Staff sign-in (`POST /api/staff/visits`): `{ resident_id, visitor_name, visitor_phone }` always as strings, `resident_id: ""`
+  when nobody is picked, `screened: true` only when the box is ticked (left out otherwise). All as API.md.
+- Day log: `?date=<info.today or the date input>&unit=all|<id>`.
+- Notices: `POST` sends `unit_id: null` for "Whole home"; `PUT { active }`; `DELETE`.
+- Screening `PUT`: `{ enabled: boolean, stop_message: string, questions: [{ id?, text }] }`. Ids come from
+  `settings.screening_questions`, so an edit keeps them; rows filled by "Use the example" have no id and get new ones.
+- Visits and privacy: digit strings become numbers (`intOrRaw`), anything else is sent raw and refused with its field;
+  `max_visitors_per_resident: null` when blank; `phone` may be `""`.
+- Units: `{ name, hours: [{ open, close }] }`. A time input cannot hold 24:00, so the page shows a 24:00 close as 00:00 and sends a
+  00:00 close as `"24:00"`. The Worker accepts a `"24:00"` close and refuses a `"00:00"` close, so that mapping is needed and right;
+  an `open` of `"00:00"` is sent as is. Blank time inputs send `""` → 400 `field: "hours"`, which has a slot.
+- Residents: `{ first_name, last_initial, room, unit_id, by_arrangement: boolean }`; "Remove" is `PUT { active: false }`.
+- Staff: `POST { name, role, pin }`; `PUT { name, role }` plus `pin` only when typed; "Turn off/on" is `PUT { active }`.
+- Roll call: `GET current`, then `GET :id` once it has ended (current is null by then); `POST found { visit_id, found: boolean }`;
+  start and end with `{}`; the 409's `roll_call_id` is read from the error body; `started_by`, `ended_by` and `found_by` are shown
+  as names; every entry field it reads is in API.md's `RollCall`. The building banner reads `roll_call.found` and `.total`.
+- Contacts: `?from=&to=&unit=all|<id>`; every `ContactRow` field it reads is in API.md.
+
+**What this means for my M2 (no change asked of vl2):**
+1. **Staff sign-in order.** With nobody picked and no name, my M1 Worker answers the name error first, so the page shows "Please type
+   your name." instead of the resident error. M2 moves `resident_id` first, as API.md now says.
+2. **A unit edit re-sends its own name**, so "name taken" must ignore the unit being edited. I will test it.
+3. **The last-manager guard must also catch a role change** (manager → staff through `PUT { name, role }`), not only
+   `active: false`. I will guard and test both.
+4. **Empty contact dates.** `api.qs` keeps `""`, so a cleared date input sends `from=`. API.md says the dates must be valid but
+   names no field for a bad one. I will answer 400 `field: "from"` or `field: "to"`, so it lands in their `from`/`to` slot.
+5. **A resident on a closed or unknown unit.** API.md says "active unit" with no code. I will answer 400 `field: "unit_id"`
+   (not 404), so the message lands under the resident form's unit picker instead of the general error.
+6. **Staff name and role rules** are not in API.md. I will take a name of 1–60 characters (`field: "name"`) and a role of
+   `manager` or `staff` (`field: "role"`); both have slots.
+7. Fields with no slot fall back to the form's general error, which is fine: `enabled` (screening) and `active` (row errors).
+
+No mismatch needs a change in vl2's files.

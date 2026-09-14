@@ -54,6 +54,33 @@ it in M3 with escapes.
 trailing `echo` still printed "done" with exit 0. Caught by reading the output, not the exit code. Every later QA run first shows the QA
 worktree's `git status`, restores that log, and reports `rig qa`'s own exit code.
 
+### 3. main `823f7f7` (vl2 M2 staff specs merged), 18:45
+
+Command: `rig qa --ref 823f7f7 --port 8409 --run '…'` (QA worktree `git status` shown and tracked logs restored first; `app/node_modules` linked).
+
+| Suite | Passed | Failed | Skipped |
+|---|---|---|---|
+| Worker unit | 26 | 0 | 0 |
+| Worker on an empty D1 | 1 | 0 | 0 |
+| Worker API M1 + property + M2 | 48 | 0 | 0 |
+| Worker first setup (no `TEST_MODE`) | 1 | 0 | 0 |
+| Worker negative controls | 12 red of 12 | | |
+| Playwright staff pages (26 tests × chromium/webkit × 390/tablet) | 104 | 0 | 0 |
+| Staff page negative controls (stale-total, no-overdue, overlay, notice-unit, example-saves, header-see-through, time-wraps, stacked-buttons) | 8 red of 8 | | |
+
+Every exit code 0 (`WORKER_EXIT`, `NEGATIVE_EXIT`, `STAFF_E2E_EXIT`, `STAFF_NEGATIVE_EXIT`, `rig qa`); QA ports free after.
+
+Notes from the slices' reports that belong in the record:
+- vl2: `elementFromPoint` cannot catch a see-through sticky header (the header is on top either way), so the header check asserts an
+  opaque background and that assertion is what went red. In **mobile WebKit** Playwright has no mouse wheel and no touch drag, so that
+  one test scrolls with `window.scrollBy` there, recorded as a test annotation; Chromium uses a real wheel. Known gap: script, not input.
+- vl1: its first "the sticky header never covers a button" check passed while the 112 px header covered buttons (fixed 96 px scroll
+  padding): the page was too short for a button to reach the header. The check was given a guard that a target must reach the header
+  (red: "measures nothing"), then 8 screening questions so it could (red: "its top edge is covered"), then the fix (padding follows the
+  measured header) and control (r).
+- vl1 found the lead's journey spec failing at the roll-call step: `getByText(/1 of 1 found/)` matched two elements (strict mode).
+  Narrowed to `#roll-call-progress` (bccf7ff). Its untracked run of the fixed journey passed in both tablet engines.
+
 ## Contract changes made during the build
 
 - vl2 asked what a staff sign-in with no resident returns → API.md: 400 `field: "resident_id"`, checked first (6be6cde).

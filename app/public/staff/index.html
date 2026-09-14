@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en-CA">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Staff · Visitor log</title>
+  <link rel="stylesheet" href="/theme.css">
+  <link rel="stylesheet" href="/common/style.css">
+  <link rel="stylesheet" href="/staff/staff.css">
+  <script type="module" src="/staff/staff.js"></script>
+</head>
+<body class="staff-app">
+  <div class="aurora" aria-hidden="true"></div>
+
+  <header class="app-header" data-sticky-header>
+    <div class="inner">
+      <div id="header-home" class="home-line"><span class="home-name">Visitor log</span></div>
+      <div class="who-line no-print" id="who-line" hidden>
+        <span class="clock" id="clock"></span>
+        <span class="who" id="who-name"></span>
+        <a class="button" id="settings-link" href="/settings/" hidden>Settings</a>
+        <button type="button" id="staff-signout">Sign out</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div id="signin" hidden></div>
+    <p id="load-error" class="field-error" role="alert"></p>
+
+    <div id="app" hidden>
+      <div id="tabs" class="no-print" aria-label="Staff pages"></div>
+
+      <!-- In the building -->
+      <section id="panel-building" role="tabpanel" aria-labelledby="tab-building" hidden>
+        <div class="total-bar">
+          <p id="building-total" aria-live="polite"><span class="total-number">0</span> in the building</p>
+          <button type="button" id="roll-call-banner" class="roll-banner" hidden></button>
+        </div>
+        <p id="building-status" class="field-error" role="alert"></p>
+        <div id="units" class="unit-grid"></div>
+        <section id="auto-today" class="card auto-today" hidden>
+          <h2>Signed out automatically at closing today (not confirmed)</h2>
+          <p class="muted small">They may still be in the building. Check before you trust a count of zero.</p>
+          <ul id="auto-today-list" class="auto-list"></ul>
+        </section>
+      </section>
+
+      <!-- Roll call -->
+      <section id="panel-roll-call" role="tabpanel" aria-labelledby="tab-roll-call" hidden>
+        <div id="roll-none" class="card stack">
+          <h2>Fire drill roll call</h2>
+          <p class="muted" id="roll-none-text">No roll call is going. Start one to tick off everyone who is signed in.</p>
+          <div>
+            <button type="button" id="start-roll-call" class="primary big">Start roll call</button>
+          </div>
+          <div id="roll-start-confirm"></div>
+        </div>
+        <div id="roll-going" hidden>
+          <div class="roll-head card">
+            <div>
+              <p id="roll-call-progress" class="roll-progress" aria-live="polite"></p>
+              <p id="roll-call-meta" class="muted"></p>
+            </div>
+            <div class="roll-end">
+              <button type="button" id="end-roll-call" class="danger-action big">End roll call</button>
+              <div id="roll-end-confirm"></div>
+            </div>
+          </div>
+          <p id="roll-status" class="field-error" role="alert"></p>
+          <div id="roll-entries"></div>
+        </div>
+      </section>
+
+      <!-- Day log -->
+      <section id="panel-day-log" role="tabpanel" aria-labelledby="tab-day-log" hidden>
+        <div class="card">
+          <div class="log-controls">
+            <button type="button" id="log-prev" aria-label="Previous day">Previous</button>
+            <div class="field">
+              <label for="log-date">Day</label>
+              <input type="date" id="log-date" name="date">
+              <p class="field-error" data-error-for="date" role="alert"></p>
+            </div>
+            <button type="button" id="log-next" aria-label="Next day">Next</button>
+            <div class="field">
+              <label for="log-unit">Unit</label>
+              <select id="log-unit" name="unit"><option value="all">All units</option></select>
+            </div>
+          </div>
+          <p id="log-error" class="field-error" role="alert"></p>
+          <div class="section-title"><h2 id="log-heading">Day log</h2><span id="log-count" class="muted"></span></div>
+          <div class="table-wrap">
+            <table id="log-table">
+              <thead><tr><th>In</th><th>Out</th><th>Visitor</th><th>Phone</th><th>Resident</th><th>Room</th><th>Unit</th><th>Signed in by</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Contact list -->
+      <section id="panel-contacts" role="tabpanel" aria-labelledby="tab-contacts" hidden>
+        <form id="contacts-form" class="card" novalidate>
+          <div class="form-grid">
+            <div class="field">
+              <label for="contacts-from">From</label>
+              <input type="date" id="contacts-from" name="from">
+              <p class="field-error" data-error-for="from" role="alert"></p>
+            </div>
+            <div class="field">
+              <label for="contacts-to">To</label>
+              <input type="date" id="contacts-to" name="to">
+              <p class="field-error" data-error-for="to" role="alert"></p>
+            </div>
+            <div class="field">
+              <label for="contacts-unit">Unit</label>
+              <select id="contacts-unit" name="unit"><option value="all">All units</option></select>
+            </div>
+          </div>
+          <div class="row-flex">
+            <button type="submit" id="contacts-show" class="primary">Show</button>
+            <button type="button" id="download-contacts">Download CSV</button>
+            <span id="contacts-status" class="status-line" role="status"></span>
+          </div>
+          <p id="contacts-error" class="field-error" role="alert"></p>
+          <p id="contacts-retention" class="muted small"></p>
+        </form>
+        <div class="section-title"><h2>Contact list</h2><span id="contacts-count" class="muted"></span></div>
+        <div class="table-wrap">
+          <table id="contacts-table">
+            <thead><tr><th>Date</th><th>Unit</th><th>Resident</th><th>Room</th><th>Visitor</th><th>Phone</th><th>In</th><th>Out</th><th>Signed out</th><th>Signed in by</th></tr></thead>
+            <tbody><tr class="empty-row"><td colspan="10">Pick the dates and a unit, then Show.</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Sign someone in -->
+      <section id="panel-sign-in" role="tabpanel" aria-labelledby="tab-sign-in" hidden>
+        <form id="manual-form" class="card manual" novalidate>
+          <h2>Sign someone in</h2>
+          <p class="muted">For a visitor without a phone, or anyone the nurse's desk is letting in.</p>
+          <div class="field">
+            <label for="manual-resident">Who are they visiting?</label>
+            <select id="manual-resident" name="resident_id"><option value="">Pick a resident</option></select>
+            <p class="field-error" data-error-for="resident_id" role="alert"></p>
+          </div>
+          <div class="form-grid">
+            <div class="field">
+              <label for="manual-name">Visitor's name</label>
+              <input type="text" id="manual-name" name="visitor_name" autocomplete="off" maxlength="60">
+              <p class="field-error" data-error-for="visitor_name" role="alert"></p>
+            </div>
+            <div class="field">
+              <label for="manual-phone">Phone number <span class="hint">Leave blank if they have no phone</span></label>
+              <input type="tel" id="manual-phone" name="visitor_phone" autocomplete="off" inputmode="tel">
+              <p class="field-error" data-error-for="visitor_phone" role="alert"></p>
+            </div>
+          </div>
+          <div id="manual-screening" class="screening-box" hidden>
+            <h3>Screening questions</h3>
+            <p class="muted small">Ask each one out loud. Only sign in a visitor who answers No to every one.</p>
+            <ol id="manual-questions"></ol>
+            <label class="check" for="manual-screened">
+              <input type="checkbox" id="manual-screened" name="screened">
+              I asked the screening questions and every answer was No
+            </label>
+            <p class="field-error" data-error-for="screened" role="alert"></p>
+          </div>
+          <p id="manual-error" class="field-error" role="alert"></p>
+          <button type="submit" id="manual-submit" class="primary big">Sign in</button>
+          <p id="manual-result" class="status-line manual-result" role="status"></p>
+          <ul id="manual-warnings" class="warnings" hidden></ul>
+        </form>
+      </section>
+    </div>
+  </main>
+</body>
+</html>

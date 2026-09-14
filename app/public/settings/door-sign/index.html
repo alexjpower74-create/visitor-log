@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en-CA">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Door sign · Visitor log</title>
+  <link rel="stylesheet" href="/theme.css">
+  <link rel="stylesheet" href="/settings/door-sign/door-sign.css">
+  <script src="/vendor/qrcode.js"></script>
+  <script type="module" src="/settings/door-sign/door-sign.js"></script>
+</head>
+<body class="door-sign">
+  <div class="toolbar no-print">
+    <a class="button" id="back-to-settings" href="/settings/#tab=door-sign">Back to settings</a>
+    <button type="button" id="print-sign" class="print-button">Print</button>
+  </div>
+
+  <main class="sheet">
+    <p class="home"><span id="door-home"></span> <span class="sample-badge" id="door-sample" hidden>SAMPLE</span></p>
+    <h1>Visitors: please sign in and out</h1>
+    <p class="lead">Point your phone's camera at this code</p>
+    <div class="qr-frame"><canvas id="door-qr"></canvas></div>
+    <p class="address" id="door-url"></p>
+    <p class="no-app">No app needed.</p>
+    <p class="note" id="door-note"></p>
+    <p id="door-error" class="door-error" role="alert"></p>
+  </main>
+</body>
+</html>

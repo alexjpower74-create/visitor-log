@@ -279,3 +279,469 @@ not ok 1 - hours: Mary at 12:00 PM and at 11:30 AM (the close minute) → 403 ou
     +       home_notices: [],
     +       in_at: '2026-09-14T14:00:00.000Z',
 RESULT: RED as intended (exit 1); red tests: hours: Mary at 12:00 PM and at 11:30 AM (the close minute) → 403 outside_hours; at 1:30 PM → 201; Frank at 3:00 AM → 201; Agnes at 7:00 PM → 403
+
+=== negative:notice-unit — 2026-09-14T20:49:49.698Z
+break: world.js unitNoticesOf returns every active notice instead of only the resident's unit's
+patched: src/world.js
+run: node tests/run.mjs --fresh --api-only --grep ^notice on the right unit (PORT 8405)
+== api: fresh Worker on http://127.0.0.1:8405 (state .state-8405)
+# tests 1
+# pass 1
+# fail 0
+# skipped 0
+# tests 3
+# pass 2
+# fail 1
+# skipped 0
+not ok 2 - notice on the right unit: a Cove outbreak notice is in Agnes's unit_notices only, a whole-home notice only in home_notices; staff see it on the Cove card only; turned off it is gone everywhere
+  ---
+  duration_ms: 179.867694
+  type: 'test'
+  location: 'worker/tests/api.test.mjs:158:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    ... Skipped lines
+    
+      [
+        [
+          {
+            id: 'n_91bd9cb3b3442604',
+            message: 'SAMPLE notice: Cove unit is on outbreak precautions. Please wear a mask and clean your hands before you go in.',
+    ...
+          },
+    +     {
+    +       id: 'n_6a9a79d9293d0289',
+    +       message: 'SAMPLE notice: the side door is closed for painting this week. Please use the main entrance.',
+    +       severity: 'info',
+RESULT: RED as intended (exit 1); red tests: notice on the right unit: a Cove outbreak notice is in Agnes's unit_notices only, a whole-home notice only in home_notices; staff see it on the Cove card only; turned off it is gone everywhere
+
+=== negative:screening — 2026-09-14T20:49:53.078Z
+break: rules.js decideVisitorSignIn no longer stops on a "yes" answer
+patched: src/rules.js
+run: node tests/run.mjs --fresh --api-only --grep ^screening: a yes (PORT 8405)
+== api: fresh Worker on http://127.0.0.1:8405 (state .state-8405)
+# tests 1
+# pass 1
+# fail 0
+# skipped 0
+# tests 3
+# pass 2
+# fail 1
+# skipped 0
+not ok 2 - screening: a yes stops the sign-in with the stop message byte for byte, and the building, the day log and D1 are unchanged; all no → screened
+  ---
+  duration_ms: 1212.857178
+  type: 'test'
+  location: 'worker/tests/api.test.mjs:256:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    201 !== 403
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 403
+  actual: 201
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (worker/tests/api.test.mjs:277:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.run (node:internal/test_runner/test:1409:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+  ...
+RESULT: RED as intended (exit 1); red tests: screening: a yes stops the sign-in with the stop message byte for byte, and the building, the day log and D1 are unchanged; all no → screened
+
+=== negative:auto-out — 2026-09-14T20:49:57.482Z
+break: world.js inBuildingAt and outOf ignore auto_out_at, and maintenance.js never writes the automatic sign-out
+patched: src/world.js, src/world.js, src/maintenance.js
+run: node tests/run.mjs --fresh --api-only --grep ^count across midnight|^count property (PORT 8405)
+== api: fresh Worker on http://127.0.0.1:8405 (state .state-8405)
+# tests 1
+# pass 1
+# fail 0
+# skipped 0
+# tests 3
+# pass 1
+# fail 2
+# skipped 0
+not ok 2 - count across midnight auto sign-out: Harbour auto at 9:00 PM, the late Harbour and the Lighthouse visits auto at 12:00 AM; the day log keeps all four
+  ---
+  duration_ms: 191.768672
+  type: 'test'
+  location: 'worker/tests/api.test.mjs:380:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    
+      [
+    +   2,
+    -   1,
+        {
+          u_cove: 0,
+    +     u_harbour: 1,
+    -     u_harbour: 0,
+          u_lighthouse: 1
+        }
+      ]
+    
+  code: 'ERR_ASSERTION'
+not ok 3 - count property: 200 seeded events over 3 days; at 40 checkpoints total and every unit count equal the model, never negative
+  ---
+  duration_ms: 1041.440842
+  type: 'test'
+  location: 'worker/tests/count-property.test.mjs:41:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    checkpoint 79 at 2026-09-15T01:26:00.000Z: unit counts
+    + actual - expected
+    
+      {
+        u_cove: 0,
+    +   u_harbour: 7,
+    -   u_harbour: 0,
+        u_lighthouse: 7
+      }
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    u_harbour: 0
+    u_lighthouse: 7
+RESULT: RED as intended (exit 1); red tests: count across midnight auto sign-out: Harbour auto at 9:00 PM, the late Harbour and the Lighthouse visits auto at 12:00 AM; the day log keeps all four | count property: 200 seeded events over 3 days; at 40 checkpoints total and every unit count equal the model, never negative
+
+=== negative:retention-setting — 2026-09-14T20:50:01.836Z
+break: maintenance.js retentionDays ignores the home setting and always answers 30
+patched: src/maintenance.js
+run: node tests/run.mjs --fresh --api-only --grep ^retention: the manager sets 7 (PORT 8405)
+== api: fresh Worker on http://127.0.0.1:8405 (state .state-8405)
+# tests 1
+# pass 1
+# fail 0
+# skipped 0
+# tests 3
+# pass 2
+# fail 1
+# skipped 0
+not ok 2 - retention: the manager sets 7; at Aug 23 the Aug 15 visit (age 8) is gone from the day log and D1 and the Aug 16 visit (age 7) is kept
+  ---
+  duration_ms: 212.402976
+  type: 'test'
+  location: 'worker/tests/api.test.mjs:545:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Aug 15 is age 8
+    
+    1 !== 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (worker/tests/api.test.mjs:554:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.run (node:internal/test_runner/test:1409:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+  ...
+RESULT: RED as intended (exit 1); red tests: retention: the manager sets 7; at Aug 23 the Aug 15 visit (age 8) is gone from the day log and D1 and the Aug 16 visit (age 7) is kept
+
+=== negative:retention-boundary — 2026-09-14T20:50:05.215Z
+break: maintenance.js keptFrom keeps only ages below the setting (deletes at age >= retention_days)
+patched: src/maintenance.js
+run: node tests/run.mjs --fresh --api-only --grep ^retention: age 30 kept (PORT 8405)
+== api: fresh Worker on http://127.0.0.1:8405 (state .state-8405)
+# tests 1
+# pass 1
+# fail 0
+# skipped 0
+# tests 3
+# pass 2
+# fail 1
+# skipped 0
+not ok 2 - retention: age 30 kept — the Aug 1 visit is in the day log at Aug 31 11:59 PM, and at Sep 1 12:00 AM it is gone from the day log and from D1
+  ---
+  duration_ms: 152.054676
+  type: 'test'
+  location: 'worker/tests/api.test.mjs:532:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Aug 31: age 30, kept
+    
+    0 !== 1
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 1
+  actual: 0
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (worker/tests/api.test.mjs:536:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.run (node:internal/test_runner/test:1409:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+  ...
+RESULT: RED as intended (exit 1); red tests: retention: age 30 kept — the Aug 1 visit is in the day log at Aug 31 11:59 PM, and at Sep 1 12:00 AM it is gone from the day log and from D1
+
+=== negative:link-expiry — 2026-09-14T20:50:08.664Z
+break: world.js linkExpiresAt is the UTC midnight after the visit date instead of the local midnight
+patched: src/world.js
+run: node tests/run.mjs --fresh --api-only --grep ^sign-out link: works until (PORT 8405)
+== api: fresh Worker on http://127.0.0.1:8405 (state .state-8405)
+# tests 1
+# pass 1
+# fail 0
+# skipped 0
+# tests 3
+# pass 2
+# fail 1
+# skipped 0
+not ok 2 - sign-out link: works until 11:59:59 PM, 410 at 12:00:00 AM on both routes
+  ---
+  duration_ms: 97.210607
+  type: 'test'
+  location: 'worker/tests/api.test.mjs:471:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    {"error":"This sign-out link has expired. It only works on the day of your visit.","code":"link_expired"}
+    
+    410 !== 200
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 200
+  actual: 410
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (worker/tests/api.test.mjs:474:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.run (node:internal/test_runner/test:1409:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+  ...
+RESULT: RED as intended (exit 1); red tests: sign-out link: works until 11:59:59 PM, 410 at 12:00:00 AM on both routes
+
+=== negative:hours-close — 2026-09-14T20:50:12.155Z
+break: hours.js openNow counts the close minute as inside (now_local <= close)
+patched: src/hours.js
+run: node tests/run.mjs --fresh --api-only --grep ^hours: Mary at (PORT 8405)
+== api: fresh Worker on http://127.0.0.1:8405 (state .state-8405)
+# tests 1
+# pass 1
+# fail 0
+# skipped 0
+# tests 3
+# pass 2
+# fail 1
+# skipped 0
+not ok 2 - hours: Mary at 12:00 PM and at 11:30 AM (the close minute) → 403 outside_hours; at 1:30 PM → 201; Frank at 3:00 AM → 201; Agnes at 7:00 PM → 403
+  ---
+  duration_ms: 126.969318
+  type: 'test'
+  location: 'worker/tests/api.test.mjs:295:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    11:30 AM is outside
+    + actual - expected
+    
+      [
+    +   201,
+    -   403,
+        {
+    +     out_url: '/out/?t=I8cGgID2r4mEoq_VfE3gG2Q4GSP-13Z7AjceWIfbtr4',
+    +     token: 'I8cGgID2r4mEoq_VfE3gG2Q4GSP-13Z7AjceWIfbtr4',
+    +     visit: {
+    +       date: '2026-09-14',
+    +       date_label: 'Mon Sep 14',
+    +       home_name: 'SAMPLE Harbourview Care Home (demo)',
+    +       home_notices: [],
+    +       in_at: '2026-09-14T14:00:00.000Z',
+RESULT: RED as intended (exit 1); red tests: hours: Mary at 12:00 PM and at 11:30 AM (the close minute) → 403 outside_hours; at 1:30 PM → 201; Frank at 3:00 AM → 201; Agnes at 7:00 PM → 403
+
+=== negative:csv-guard — 2026-09-14T20:50:15.597Z
+break: csv.js cell no longer puts an apostrophe before a cell starting with =, +, -, @, tab or CR
+patched: src/csv.js
+run: node tests/run.mjs --fresh --api-only --grep ^contacts CSV (PORT 8405)
+== api: fresh Worker on http://127.0.0.1:8405 (state .state-8405)
+# tests 1
+# pass 1
+# fail 0
+# skipped 0
+# tests 3
+# pass 2
+# fail 1
+# skipped 0
+not ok 1 - contacts CSV: exact header, CRLF on every line, quoting and the formula guard, the Signed out and Signed in by words, the filename; the JSON rows and the CSV lines agree
+  ---
+  duration_ms: 224.960004
+  type: 'test'
+  location: 'worker/tests/api-m2.test.mjs:391:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    the formula is guarded:
+    Date,Unit,Resident,Room,Visitor,Phone,In,Out,Signed out,Signed in by
+    2026-09-14,Lighthouse wing,Frank O. (SAMPLE),201,"O'Brien, ""Junior"" (SAMPLE)",709-555-0100,10:00 AM,,Still in,QR code
+    2026-09-14,Lighthouse wing,Rose B. (SAMPLE),205,"=HYPERLINK(""x"") (SAMPLE)",709-555-0101,10:05 AM,10:30 AM,Visitor,QR code
+    2026-09-14,Lighthouse wing,Walter K. (SAMPLE),210,@Desk visitor (SAMPLE),,10:40 AM,11:00 AM,Staff,Carl B. (SAMPLE)
+    2026-09-14,Harbour wing,Mary S. (SAMPLE),101,Visitor 9 (SAMPLE),709-555-0102,2:00 PM,9:00 PM,Auto at closing,QR code
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (worker/tests/api-m2.test.mjs:418:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.run (node:internal/test_runner/test:1409:7)
+RESULT: RED as intended (exit 1); red tests: contacts CSV: exact header, CRLF on every line, quoting and the formula guard, the Signed out and Signed in by words, the filename; the JSON rows and the CSV lines agree
+
+=== negative:rollcall-after-start — 2026-09-14T20:50:18.886Z
+break: rollcall.js onRollCall drops the visits signed in after the roll call started
+patched: src/rollcall.js
+run: node tests/run.mjs --fresh --api-only --grep ^roll call: (PORT 8405)
+== api: fresh Worker on http://127.0.0.1:8405 (state .state-8405)
+# tests 1
+# pass 1
+# fail 0
+# skipped 0
+# tests 3
+# pass 2
+# fail 1
+# skipped 0
+not ok 1 - roll call: three in, start → 3; a sign-in after the start → 4 with after_start; a sign-out during it stays with out_label; found by Carl and by Amira; unfound; a second start 409; end; found writes 409; current null after
+  ---
+  duration_ms: 252.790772
+  type: 'test'
+  location: 'worker/tests/api-m2.test.mjs:261:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    the sign-in after the start is on the list
+    
+    3 !== 4
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 4
+  actual: 3
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (worker/tests/api-m2.test.mjs:297:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.run (node:internal/test_runner/test:1409:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+  ...
+RESULT: RED as intended (exit 1); red tests: roll call: three in, start → 3; a sign-in after the start → 4 with after_start; a sign-out during it stays with out_label; found by Carl and by Amira; unfound; a second start 409; end; found writes 409; current null after
+
+=== negative:last-manager — 2026-09-14T20:50:22.157Z
+break: people.js putStaff lets the last active manager be turned off or made staff
+patched: src/people.js
+run: node tests/run.mjs --fresh --api-only --grep ^staff: turning off the last manager (PORT 8405)
+== api: fresh Worker on http://127.0.0.1:8405 (state .state-8405)
+# tests 1
+# pass 1
+# fail 0
+# skipped 0
+# tests 3
+# pass 2
+# fail 1
+# skipped 0
+not ok 1 - staff: turning off the last manager → 409, and so does making them staff; with a second manager both work; a turned-off PIN no longer signs in
+  ---
+  duration_ms: 142.410705
+  type: 'test'
+  location: 'worker/tests/api-m2.test.mjs:238:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    
+      [
+    +   200,
+    -   409,
+        {
+    +     settings: {
+    +       home: {
+    +         after_hours_message: 'Visiting hours are over for now. If you need to see someone, please call the unit.',
+    +         desk_message: "Please see the nurse's desk.",
+    +         home_name: 'SAMPLE Harbourview Care Home (demo)',
+    +         max_visitors_per_resident: 2,
+    +         phone: '709-555-0142',
+    +         retention_days: 30,
+RESULT: RED as intended (exit 1); red tests: staff: turning off the last manager → 409, and so does making them staff; with a second manager both work; a turned-off PIN no longer signs in
+
+=== negative:ratelimit — 2026-09-14T20:50:25.373Z
+break: auth.js recordWrongPin writes nothing, so wrong PINs are never counted
+patched: src/auth.js
+run: node tests/run.mjs --fresh --api-only --grep ^pin guard (PORT 8405)
+== api: fresh Worker on http://127.0.0.1:8405 (state .state-8405)
+# tests 1
+# pass 1
+# fail 0
+# skipped 0
+# tests 3
+# pass 2
+# fail 1
+# skipped 0
+not ok 2 - pin guard: 5 wrong PINs from one IP → 429, then even the right PIN 429; another X-Test-IP still works
+  ---
+  duration_ms: 300.05499
+  type: 'test'
+  location: 'worker/tests/api.test.mjs:93:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    
+      [
+    +   401,
+    -   429,
+        {
+    +     code: 'unauthorized',
+    +     error: 'That PIN is not right.',
+    +     field: 'pin'
+    -     code: 'rate_limited',
+    -     error: 'Too many tries. Wait 15 minutes, then try again.'
+        }
+      ]
+    
+RESULT: RED as intended (exit 1); red tests: pin guard: 5 wrong PINs from one IP → 429, then even the right PIN 429; another X-Test-IP still works
+
+=== negative:contacts-unit — 2026-09-14T20:50:28.807Z
+break: contacts.js keeps every unit's visits whatever unit is asked for
+patched: src/contacts.js
+run: node tests/run.mjs --fresh --api-only --grep ^contacts: rows for a range (PORT 8405)
+== api: fresh Worker on http://127.0.0.1:8405 (state .state-8405)
+# tests 1
+# pass 1
+# fail 0
+# skipped 0
+# tests 3
+# pass 2
+# fail 1
+# skipped 0
+not ok 1 - contacts: rows for a range across two dates, by date then time, and the unit filter; from > to, bad dates, too long a range, unknown unit
+  ---
+  duration_ms: 210.608401
+  type: 'test'
+  location: 'worker/tests/api-m2.test.mjs:343:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    
+      [
+        'u_harbour',
+    +   4,
+    -   2,
+        [
+    +     'Frank O. (SAMPLE)',
+          'Mary S. (SAMPLE)',
+    +     'Rose B. (SAMPLE)',
+          'George P. (SAMPLE)'
+        ]
+      ]
+    
+RESULT: RED as intended (exit 1); red tests: contacts: rows for a range across two dates, by date then time, and the unit filter; from > to, bad dates, too long a range, unknown unit

@@ -1,9 +1,13 @@
 // Visitor Log Worker: the API in docs/API.md under /api/*, the static app from ../app/public, and the maintenance cron.
 import { assertPinAllowed, createSession, recordWrongPin, requireRole, staffByPin, WRONG_PIN } from './auth.js'
 import { now as clockNow, testMode } from './clock.js'
+import { contacts, contactsCsv } from './contacts.js'
 import { ApiError, bad, json, notFound, unauthorized } from './http.js'
 import { maintenance } from './maintenance.js'
+import { postResident, postStaff, postUnit, putResident, putStaff, putUnit } from './people.js'
+import { rollCallCurrent, rollCallEnd, rollCallFound, rollCallGet, rollCallStart } from './rollcall.js'
 import { resetSample } from './sample.js'
+import { seedDemo } from './seed.js'
 import { deleteNotice, getSettings, postNotice, putHome, putNotice, putScreening } from './settings.js'
 import { building, dayLog, staffResidents, staffSignIn, staffSignOut } from './staff.js'
 import { dateLabel, localDate, localHHMM, longLabel, timeLabel, TZ } from './time.js'
@@ -26,14 +30,28 @@ const ROUTES = [
   ['POST', '/api/staff/visits', staffSignIn, 'staff'],
   ['POST', '/api/staff/visits/:id/signout', staffSignOut, 'staff'],
   ['GET', '/api/staff/visits', dayLog, 'staff'],
+  ['GET', '/api/staff/contacts', contacts, 'staff'],
+  ['GET', '/api/staff/contacts.csv', contactsCsv, 'staff'],
+  ['GET', '/api/staff/rollcall/current', rollCallCurrent, 'staff'],
+  ['POST', '/api/staff/rollcall', rollCallStart, 'staff'],
+  ['GET', '/api/staff/rollcall/:id', rollCallGet, 'staff'],
+  ['POST', '/api/staff/rollcall/:id/found', rollCallFound, 'staff'],
+  ['POST', '/api/staff/rollcall/:id/end', rollCallEnd, 'staff'],
   ['GET', '/api/settings', getSettings, 'manager'],
   ['PUT', '/api/settings/home', putHome, 'manager'],
   ['PUT', '/api/settings/screening', putScreening, 'manager'],
   ['POST', '/api/settings/notices', postNotice, 'manager'],
   ['PUT', '/api/settings/notices/:id', putNotice, 'manager'],
   ['DELETE', '/api/settings/notices/:id', deleteNotice, 'manager'],
+  ['POST', '/api/settings/units', postUnit, 'manager'],
+  ['PUT', '/api/settings/units/:id', putUnit, 'manager'],
+  ['POST', '/api/settings/residents', postResident, 'manager'],
+  ['PUT', '/api/settings/residents/:id', putResident, 'manager'],
+  ['POST', '/api/settings/staff', postStaff, 'manager'],
+  ['PUT', '/api/settings/staff/:id', putStaff, 'manager'],
   ['POST', '/api/test/reset', testReset, 'test'],
   ['POST', '/api/test/maintenance', testMaintenance, 'test'],
+  ['POST', '/api/test/seed', testSeed, 'test'],
 ].map(([method, pattern, handler, access, maintain]) => {
   const names = []
   const re = new RegExp(`^${pattern.replace(/\./g, '\\.').replace(/:(\w+)/g, (_, n) => (names.push(n), '([^/]+)'))}$`)
@@ -134,4 +152,10 @@ async function testReset(c) {
 
 async function testMaintenance(c) {
   return json(await maintenance(c.env, c.now))
+}
+
+async function testSeed(c) {
+  const body = await c.body()
+  if (body.scenario !== 'demo') throw bad('scenario', 'The only scenario is "demo".')
+  return json(await seedDemo(c))
 }

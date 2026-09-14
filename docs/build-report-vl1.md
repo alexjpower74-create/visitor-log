@@ -108,3 +108,143 @@ The shipped code has no switch that turns any of these guards off.
 ### Needs from another slice
 
 None for M1.
+
+### Lead's answers to the M1 questions (DONE)
+
+1. Midnight numbers: PLAN.md now says 2 at 8:59 PM and 1 at 9:00 PM; events and assertions kept. 2. `created_label` format is in
+API.md. 3. The lenient inputs are now the contract. 4. My wording stands. 5–7 stand, except the staff sign-in check order, which
+changes in M2 (resident missing first).
+
+## Cross-review of vl2 M1 (read-only, before vl1 M2)
+
+Read on main after 3885c0c: `app/public/common/api.js`, `app/public/staff/staff.js`, `app/public/settings/settings.js`, plus
+`showError` in `common/ui.js` and the `name=` / `data-error-for=` attributes in `staff/index.html` and `settings/index.html`.
+Every request body and query was checked against docs/API.md and against my Worker (M1 routes) or the M2 routes I am about to
+build. I edited none of vl2's files.
+
+**Matches (DONE):**
+- `api.js`: Bearer token; JSON bodies; `POST` with `{}` for sign-out, roll call start/end and staff sign-out (the Worker accepts
+  `{}` or no body); a 401 clears the session except on `/api/signin`; `download()` parses `filename="visitor-contacts-….csv"`
+  from `Content-Disposition`, which is the header I will send.
+- Staff sign-in (`POST /api/staff/visits`): `{ resident_id, visitor_name, visitor_phone }` always as strings, `resident_id: ""`
+  when nobody is picked, `screened: true` only when the box is ticked (left out otherwise). All as API.md.
+- Day log: `?date=<info.today or the date input>&unit=all|<id>`.
+- Notices: `POST` sends `unit_id: null` for "Whole home"; `PUT { active }`; `DELETE`.
+- Screening `PUT`: `{ enabled: boolean, stop_message: string, questions: [{ id?, text }] }`. Ids come from
+  `settings.screening_questions`, so an edit keeps them; rows filled by "Use the example" have no id and get new ones.
+- Visits and privacy: digit strings become numbers (`intOrRaw`), anything else is sent raw and refused with its field;
+  `max_visitors_per_resident: null` when blank; `phone` may be `""`.
+- Units: `{ name, hours: [{ open, close }] }`. A time input cannot hold 24:00, so the page shows a 24:00 close as 00:00 and sends a
+  00:00 close as `"24:00"`. The Worker accepts a `"24:00"` close and refuses a `"00:00"` close, so that mapping is needed and right;
+  an `open` of `"00:00"` is sent as is. Blank time inputs send `""` → 400 `field: "hours"`, which has a slot.
+- Residents: `{ first_name, last_initial, room, unit_id, by_arrangement: boolean }`; "Remove" is `PUT { active: false }`.
+- Staff: `POST { name, role, pin }`; `PUT { name, role }` plus `pin` only when typed; "Turn off/on" is `PUT { active }`.
+- Roll call: `GET current`, then `GET :id` once it has ended (current is null by then); `POST found { visit_id, found: boolean }`;
+  start and end with `{}`; the 409's `roll_call_id` is read from the error body; `started_by`, `ended_by` and `found_by` are shown
+  as names; every entry field it reads is in API.md's `RollCall`. The building banner reads `roll_call.found` and `.total`.
+- Contacts: `?from=&to=&unit=all|<id>`; every `ContactRow` field it reads is in API.md.
+
+**What this means for my M2 (no change asked of vl2):**
+1. **Staff sign-in order.** With nobody picked and no name, my M1 Worker answers the name error first, so the page shows "Please type
+   your name." instead of the resident error. M2 moves `resident_id` first, as API.md now says.
+2. **A unit edit re-sends its own name**, so "name taken" must ignore the unit being edited. I will test it.
+3. **The last-manager guard must also catch a role change** (manager → staff through `PUT { name, role }`), not only
+   `active: false`. I will guard and test both.
+4. **Empty contact dates.** `api.qs` keeps `""`, so a cleared date input sends `from=`. API.md says the dates must be valid but
+   names no field for a bad one. I will answer 400 `field: "from"` or `field: "to"`, so it lands in their `from`/`to` slot.
+5. **A resident on a closed or unknown unit.** API.md says "active unit" with no code. I will answer 400 `field: "unit_id"`
+   (not 404), so the message lands under the resident form's unit picker instead of the general error.
+6. **Staff name and role rules** are not in API.md. I will take a name of 1–60 characters (`field: "name"`) and a role of
+   `manager` or `staff` (`field: "role"`); both have slots.
+7. Fields with no slot fall back to the form's general error, which is fine: `enabled` (screening) and `active` (row errors).
+
+No mismatch needs a change in vl2's files.
+
+## M2: Worker, the rest
+
+### What I built (DONE)
+
+- **Staff sign-in order** (`staff.js`), as API.md now says: `resident_id` missing or `""` → 400 `field: "resident_id"`
+  "Please pick who they are visiting."; then the name ("Please type their name."), the phone, an unknown resident (404),
+  `screened`, `already_in`.
+- **Units, residents and staff settings** (`people.js`): `POST`/`PUT /api/settings/units`, `/residents`, `/staff`, with the
+  cross-review's points built in:
+  - A unit name must be unique among open units (ignoring case), and the unit being edited doesn't count against itself.
+  - Hours are sorted on save; a close of `24:00` is accepted.
+  - Closing a unit that still has active residents → 409. A closed unit's name is free for a new unit, and the old unit can't
+    reopen under a name that's now taken.
+  - Residents: first name, initial (stored upper case), room and unit validated; a closed or unknown unit → 400 `field: "unit_id"`.
+  - Staff: PINs are unique across all staff, including anyone turned off (`pin_taken` 409 with `field: "pin"`). The last-manager
+    guard covers both turning them off and changing their role to staff. A staff edit without `pin` keeps the PIN.
+- **Roll call** (`rollcall.js`): the list is worked out from the visits every time. It is every visit in the building at the
+  start, plus every sign-in after the start (and before the end, once ended). The table stores only the ticks. A second tick on
+  someone already found keeps the first finder. Unticking clears the tick. Starting when one is already going is refused at the
+  database, not just checked first, so two tablets pressing Start at once can't both succeed. `GET /api/staff/building`'s
+  `roll_call` now carries the one going.
+- **Contact list** (`contacts.js`, `csv.js`): JSON and CSV share one query and one retention cutoff. The CSV quotes and guards
+  fields as API.md says, ends every line with CRLF, and names the file as API.md says.
+- **Demo seed** (`seed.js`): `POST /api/test/seed { scenario: "demo" }`. The ids, names, times and notices are the same for the
+  same "now". Only the sign-out tokens are random, so a demo link can't be guessed.
+- **`tools/first-setup.mjs`**: writes the home row (`sample = 0`, API.md defaults) and one manager, hashed as `auth.js` does,
+  into a git-ignored file. It makes no network calls and adds no SAMPLE rows, units or residents. `npm test` now ends with a
+  setup stage: a fresh D1, the tool's SQL, and a Worker **without** `TEST_MODE`.
+
+### Verified (DONE)
+
+`cd worker && npm test` in this worktree (port 8402): **unit 26/26 pass** (adds `csv.test.mjs`); **empty D1 1/1 pass**;
+**API M1 + count property + M2 48/48 pass, 0 skipped** (the M1 inactive-resident skip is now a real test in `api-m2.test.mjs`);
+**first setup 1/1 pass**. The first-setup check runs `tools/first-setup.mjs` against a freshly migrated D1 and starts the Worker
+without `TEST_MODE`. It checks that:
+- the manager PIN signs in, and the SAMPLE PIN 7314 doesn't;
+- `/api/info` has the home with `sample: false`, and `X-Test-Now` is ignored;
+- all three test routes answer 404;
+- a unit and a resident added through settings read "Check T." with no "(SAMPLE)".
+
+These are working-tree numbers; the lead's come from `rig qa`. Nothing was left behind: no state folders, no `first-setup.sql`,
+and the ports are free.
+
+What the M2 tests assert, and what would make them red:
+- **Roll call:** a sign-in after the start makes 4, while a list of only the visits in the building at the start stays 3
+  (control i). The test also checks: a sign-out during the roll call stays listed with its time; two tokens tick, and the first
+  finder is kept; unticking clears the tick; a second start is 409 with `roll_call_id`; ticks after the end are 409; a sign-in
+  after the end isn't added; `current` is null afterwards; the building banner summary matches.
+- **Contacts:** four visits over Sep 13 and 14 on two units, with all four "Signed out" words and both "Signed in by" words.
+  The unit filter narrows them (control l); `from > to`, bad dates and the 366-day limit are refused with their fields; a visit
+  past retention is in neither the JSON nor the CSV.
+- **CSV:** the exact header; CRLF on every line with no bare LF; the O'Brien name quoted; the HYPERLINK formula and a leading
+  `@` guarded (control h); the exact filename for all units and for one unit; the header only when there are no rows. Every CSV
+  line, read back by the test's own parser and guard, equals its JSON row.
+- **Staff:** turning off the last manager, or making them staff, is 409 (control j). A turned-off manager's session and PIN
+  stop working. A PIN change retires the old PIN. `pin_taken` applies on add and on change, and a person's own PIN doesn't
+  count against them.
+- **Seed:** at 3:00 AM and at 3:00 PM, at least 3 on Lighthouse; exactly one overdue visitor at 3:00 PM (Harbour, in at
+  10:40 AM, due 11:30 AM) and none at 3:00 AM; each of the last 20 days has visits; all three sign-out kinds appear; the
+  demo notices are on the right units; `out_url` answers 200 while the visit is in; the same "now" gives the same day log;
+  every seeded visitor name ends "(SAMPLE)".
+- **Rate guard:** the M1 429 test is control k's target.
+
+### Negative controls (DONE)
+
+`cd worker && npm run negative` (port 8405) now runs all 12 controls. The M1 seven (a–g) and the M2 five all went **RED as
+intended**, each on its named test; the output is appended to `worker/tests/negative-control.log`.
+
+| control | break in the copy | red test |
+|---|---|---|
+| (h) `negative:csv-guard` | `csv.js` `cell` drops the apostrophe guard | contacts CSV |
+| (i) `negative:rollcall-after-start` | `rollcall.js` `onRollCall` keeps only visits in the building at the start | roll call |
+| (j) `negative:last-manager` | `people.js` `putStaff` drops the last-manager 409 | staff: turning off the last manager |
+| (k) `negative:ratelimit` | `auth.js` `recordWrongPin` writes nothing | pin guard (M1 test) |
+| (l) `negative:contacts-unit` | `contacts.js` keeps every unit's visits | contacts: rows for a range … and the unit filter |
+
+The shipped code has no switch that turns any of these guards off.
+
+### Questions for the lead
+
+1. **A closed unit hides visitors who are still in.** API.md lists only active units in `GET /api/staff/building` and lets a
+   unit close once its residents are gone. So a visitor still signed in on that unit drops out of `total`, which is the
+   fire-drill count. My test signs that visitor out before closing the unit. Options: refuse closing a unit with visitors in
+   the building (409 `bad_state`), or keep closed units with visitors in the building on the card list. I have not changed the
+   contract; please decide.
+2. The words API.md does not give are mine: unit name / taken, first name, initial, room, "Pick an open unit.", staff name,
+   role, PIN, `pin_taken`, "Pick a start date." / "Pick an end date." / "Pick dates no more than 366 days apart.", "That visitor
+   is not on this roll call.", "Say whether they were found.".

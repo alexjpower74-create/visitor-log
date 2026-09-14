@@ -143,8 +143,6 @@ test('search: "ma" → Mary S. and Margaret L.; "m" → 400 field q; "10" → ro
   assert.deepEqual((await q('zz')).body.residents, [])
 })
 
-test('search: an inactive resident is not found', { skip: 'M2: no M1 route can turn a resident off (PUT /api/settings/residents/:id is M2)' }, () => {})
-
 test('resident answer: shape with hours and open_now; unknown → 404 with the exact message', async () => {
   const r = await resident('r_mary')
   assert.deepEqual(r.body, {
@@ -691,7 +689,7 @@ test('staff residents: screening flag, units with restricted, active residents b
 test('staff sign-in: visitor_name and visitor_phone validated; unknown resident 404; screening on needs screened; warnings listed in order', async () => {
   const carl = await token(PIN.carl)
   const post = (body, now = T3PM) => call('POST', '/api/staff/visits', { token: carl, body, now })
-  assert.deepEqual((await post({ resident_id: 'r_mary', visitor_name: ' ' })).body, { error: 'Please type your name.', code: 'bad_request', field: 'visitor_name' })
+  assert.deepEqual((await post({ resident_id: 'r_mary', visitor_name: ' ' })).body, { error: 'Please type their name.', code: 'bad_request', field: 'visitor_name' })
   assert.deepEqual((await post({ resident_id: 'r_mary', visitor_name: 'Pat (SAMPLE)', visitor_phone: '12' })).body,
     { error: 'Please type a 10-digit phone number, like 709-555-0123.', code: 'bad_request', field: 'visitor_phone' })
   assert.deepEqual((await post({ resident_id: 'r_nobody', visitor_name: 'Pat (SAMPLE)' })).body, { error: "We can't find that resident.", code: 'not_found' })

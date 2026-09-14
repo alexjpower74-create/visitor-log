@@ -4,7 +4,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
-const NAMES = ['notice-unit', 'screening', 'auto-out', 'retention-setting', 'retention-boundary', 'link-expiry', 'hours-close']
+const NAMES = ['notice-unit', 'screening', 'auto-out', 'retention-setting', 'retention-boundary', 'link-expiry', 'hours-close',
+  'csv-guard', 'rollcall-after-start', 'last-manager', 'ratelimit', 'contacts-unit']
 const results = NAMES.map((n) => {
   const r = spawnSync(process.execPath, [path.join(HERE, `negative-${n}.mjs`)], { stdio: 'inherit' })
   return [n, r.status]

@@ -9,6 +9,7 @@ import {
   activeResident, byFirstName, inBuildingAt, insertVisit, loadWorld, newVisitRow, noticesFor, noticeView, openVisits, outOf,
   residentName, staffVisitView,
 } from './world.js'
+import { rollCallSummary } from './rollcall.js'
 import { residentCount } from './visitor.js'
 
 export async function building(c) {
@@ -31,7 +32,7 @@ export async function building(c) {
   return json({
     now: t, date_label: dateLabel(c.today), time_label: timeLabel(c.now), total: units.reduce((s, u) => s + u.count, 0), units,
     auto_today: autoToday.map((v) => staffVisitView(v, w, t)),
-    roll_call: null, // M2: the roll call going now (no route can start one before M2)
+    roll_call: await rollCallSummary(c.db, w, t),
   })
 }
 
@@ -50,11 +51,12 @@ export async function staffResidents(c) {
 }
 
 // Staff may sign someone in outside hours, for a by-arrangement resident, on a restricted unit or past the limit: recorded,
-// with each warning that applied.
+// with each warning that applied. Checks in API.md's order: resident missing, name, phone, unknown resident, screened, already_in.
 export async function staffSignIn(c) {
   const body = await c.body()
+  if (typeof body.resident_id !== 'string' || body.resident_id === '') throw bad('resident_id', 'Please pick who they are visiting.')
   const name = cleanName(body.visitor_name)
-  if (!name) throw bad('visitor_name', MSG.name)
+  if (!name) throw bad('visitor_name', 'Please type their name.')
   let phone = ''
   if (typeof body.visitor_phone === 'string' ? body.visitor_phone.trim() !== '' : body.visitor_phone != null) {
     phone = normalizePhone(body.visitor_phone)

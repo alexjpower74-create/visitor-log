@@ -67,3 +67,17 @@ run: npx playwright test tests/visit/targets.spec.mjs --project chromium-390 --g
     .negative/visit-header-covers/results/visit-targets-targets-ever-529f8--contrast-the-sticky-header-chromium-390/test-failed-1.png
   1 failed
 RESULT: RED as intended
+
+=== visit negative:stop-stays — 2026-09-14T22:06:28.461Z
+break: sign-in.js answer() no longer hides #stop or shows #sign-in when no answer is "Yes" any more
+patched: app/public/visit/sign-in.js
+run: npx playwright test tests/visit/visit.spec.mjs --project chromium-390 --grep "screening: after a Yes, tapping No on the same question hides the stop message and brings Sign in back; nothing is sent until Sign in" (E2E_PORT 8406, E2E_WORKER_DIR app/.negative/visit-stop-stays/worker)
+  ✘  1 [chromium-390] › tests/visit/visit.spec.mjs:181:1 › screening: after a Yes, tapping No on the same question hides the stop message and brings Sign in back; nothing is sent until Sign in (9.2s)
+    Error: expect(locator).toBeHidden() failed
+    Locator:  locator('#stop')
+    Expected: hidden
+    Received: visible
+           - unexpected value "visible"
+    .negative/visit-stop-stays/results/visit-visit-screening-afte-8abf6-thing-is-sent-until-Sign-in-chromium-390/test-failed-1.png
+  1 failed
+RESULT: RED as intended

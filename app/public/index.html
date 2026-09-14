@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en-CA">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Sign in to visit</title>
+  <link rel="stylesheet" href="/theme.css">
+  <link rel="stylesheet" href="/visit/visit.css">
+  <script type="module" src="/visit/sign-in.js"></script>
+</head>
+<body class="visitor">
+  <header class="v-header" data-sticky-header>
+    <div class="v-inner">
+      <span id="home-name" class="home-name">Visitor log</span>
+      <span id="sample-badge" class="sample-badge" hidden>SAMPLE</span>
+    </div>
+  </header>
+
+  <main class="v-main">
+    <p id="loading" class="v-muted">Loading…</p>
+    <div id="home-notices" class="v-notices" aria-label="Notices from the home"></div>
+
+    <div id="flow" hidden>
+      <button type="button" id="back" class="v-button v-back" hidden>Back</button>
+
+      <section id="step-details" hidden>
+        <h1>Sign in to visit</h1>
+        <div class="v-field">
+          <label for="name">Your name</label>
+          <input id="name" name="name" type="text" autocomplete="name" autocapitalize="words" maxlength="60">
+        </div>
+        <div class="v-field">
+          <label for="phone">Your phone number</label>
+          <input id="phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" maxlength="20">
+        </div>
+        <p class="v-privacy-line">The home keeps your name and phone number for <span id="retention-days">30 days</span>. <a id="privacy-link" href="/privacy/">Privacy</a></p>
+        <button type="button" id="continue" class="v-button v-primary">Continue</button>
+        <button type="button" id="not-you" class="v-button" hidden>Not you?</button>
+      </section>
+
+      <section id="step-search" hidden>
+        <h1>Who are you visiting?</h1>
+        <div class="v-field">
+          <label for="search">First name or room number</label>
+          <input id="search" name="search" type="text" autocomplete="off" autocapitalize="words" enterkeyhint="search" maxlength="40">
+        </div>
+        <p id="search-hint">Type at least 2 letters of their first name, or their room number.</p>
+        <div id="results" aria-live="polite"></div>
+      </section>
+
+      <section id="step-resident" hidden>
+        <p id="resident-loading" class="v-muted" hidden>Loading…</p>
+        <h1 id="resident-name"></h1>
+        <p id="resident-where" class="v-where"></p>
+
+        <div id="blocked" class="v-alert" role="alert" hidden>
+          <p id="blocked-message"></p>
+          <div id="blocked-notices" class="v-notices"></div>
+          <button type="button" id="pick-else" class="v-button">Pick someone else</button>
+        </div>
+
+        <div id="unit-notices" class="v-notices" hidden></div>
+        <button type="button" id="confirm-notice" class="v-button" aria-pressed="false" hidden>I have read it</button>
+
+        <div id="screening" hidden>
+          <div id="questions"></div>
+        </div>
+        <div id="stop" class="v-alert" role="alert" hidden>
+          <p id="stop-message"></p>
+          <button type="button" id="stop-back" class="v-button">I tapped Yes by mistake</button>
+        </div>
+
+        <button type="button" id="sign-in" class="v-button v-primary v-big" hidden disabled>Sign in</button>
+      </section>
+
+      <p id="error" class="v-error" role="alert" hidden></p>
+    </div>
+
+    <section id="signed-in" hidden></section>
+    <section id="signed-out" hidden></section>
+    <section id="link-error-section" hidden>
+      <p id="link-error" class="v-alert" role="alert"></p>
+      <a class="v-button v-primary" href="/">Sign in</a>
+    </section>
+  </main>
+</body>
+</html>

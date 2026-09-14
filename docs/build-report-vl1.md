@@ -248,3 +248,119 @@ The shipped code has no switch that turns any of these guards off.
 2. The words API.md does not give are mine: unit name / taken, first name, initial, room, "Pick an open unit.", staff name,
    role, PIN, `pin_taken`, "Pick a start date." / "Pick an end date." / "Pick dates no more than 366 days apart.", "That visitor
    is not on this roll call.", "Say whether they were found.".
+
+### Lead's answers to the M2 questions (DONE)
+
+1. Closed units: decided in API.md (ead4387) and DECISIONS #18. The building view lists every open unit, then any closed unit that
+   still has visitors in the building, and each unit carries `active`. 2. My wording for the unspecified messages stands. API.md
+   now says "Pick a real date." for a bad contact-list date; I changed my "Pick a start date." / "Pick an end date." to match.
+
+## M3: the visitor pages
+
+### Two fixes first (DONE, each committed with its test)
+
+1. **Closed units stay in the building view** (`14afc3c`). `GET /api/staff/building` lists every open unit, then any closed unit
+   with visitors still in, and each unit carries `active`; the total counts them. Test: a visitor in on Cove, Cove's residents
+   removed, Cove closed. Cove is still listed with `active: false`, count 1, total 1; a new open unit is listed before it; once the
+   visitor is signed out, Cove leaves the list. `npm test`: unit 26/26, empty D1 1/1, API 49/49, first setup 1/1. **Control (q)
+   `negative:closed-unit-hidden`** (the copy lists active units only) went **RED as intended**, failing with "Expected values to
+   be strictly deep-equal" on the unit list. The output is in `worker/tests/negative-control.log`.
+2. **`tools/first-setup.mjs` is text again** (`b39e245`). Line 18 held literal NUL..0x1F and DEL bytes inside the regex class, so
+   git treated the file as binary. The class is now written `\x00-\x1f\x7f`; `file` reports "JavaScript source, Unicode text,
+   UTF-8 text" for both the working copy and the committed blob. The first-setup stage of `npm test` passes 1/1. `git show`
+   still prints "Bin" for this one commit, because the old side of that diff was binary; later diffs of the file are normal text.
+   A scan of every other file I wrote found no control bytes.
+
+### Contract addition the lead needs to write into API.md
+
+**`GET /api/visitor/start` → `screening.stop_message`** (the home's words; `""` while screening is off). The Design says a "Yes"
+at once shows `#stop` with the home's stop message *and sends nothing*. Your journey spec checks both. But API.md's start answer had
+only `{ enabled, questions }`: the stop message existed only in the 403 to a `POST`, so a page could not show the words without
+sending. The field is additive, and vl2's pages (which read only `screening.questions`) are unaffected. Tests: the M1 visitor-start
+and empty-D1 tests now expect `stop_message: ""`, and the screening test expects the exact stop message, byte for byte, alongside
+the questions.
+
+### The visitor pages (DONE)
+
+- **`/`** (`app/public/index.html`, `visit/sign-in.js`): the header shows the home name and SAMPLE; `#home-notices` sits above
+  everything. **Step 1**, "Sign in to visit": `#name`, `#phone`, the privacy line with the API's retention days and `#privacy-link`,
+  `#continue`, and `#not-you`. Name and phone are saved in `localStorage` `visitor-log:me` on Continue. **Step 2**, "Who are you
+  visiting?": `#search` with the under-2-letters hint; `button.resident[data-resident]`, or "No one matches…". **Step 3**:
+  - the resident and their room and unit;
+  - `#blocked` with the API's `message`, the unit's notices and `#pick-else` when `can_sign_in` is false;
+  - otherwise `#unit-notices`, then `#confirm-notice` (`aria-pressed`) when `needs_notice_confirm`;
+  - `#screening` with `.question[data-question]` and `button.answer[data-answer]`;
+  - a "Yes" shows `#stop` at once with the home's words, hides `#sign-in` and sends nothing; `#stop-back` clears the answers;
+  - `#sign-in` is enabled only when every answer is No and the notice (if any) is confirmed.
+
+  Picking a different resident clears the notices, the refusal, the answers and the confirmation before anything new shows. A
+  sign-in moves the page to `/out/?t=` with `history.replaceState`, and the token is kept in `visitor-log:visit`, so opening `/`
+  again shows the visit while it is in. API errors show the API's text in `#error`, under the field it names (a name or phone
+  error takes the visitor back to step 1).
+- **`/out/?t=`** (`out/index.html`, `visit/out.js`): `#signed-in` (a check, "Signed in", `#in-time`, "Visiting …", the notices,
+  `#sign-out`, "Keep this page. This sign-out link works until midnight tonight."), or `#signed-out` (`#out-time` and the sentence
+  for the visitor, staff or auto sign-out, "Thank you for visiting.", "Sign in again"). A 404 or 410 shows `#link-error` with the
+  API's text and a Sign in link, and nothing about any visit anywhere in the DOM.
+- **`/privacy/`** (`privacy/index.html`, `visit/privacy.js`): the sections and words from the Design, with the home's name,
+  retention days and phone from the API.
+- Shared in `visit/visit.js` and `visit/visit.css`: 18 px type, every button at least 56 px and Sign in / Sign out 64 px, notice
+  cards (a 6 px edge in `--sev` and the severity pill), no glow. The sticky header's real height is kept as the page's scroll
+  padding (below).
+
+### Verified (DONE)
+
+Playwright, `E2E_PORT=8404 npx playwright test tests/visit` (chromium-390 and webkit-390, the real Worker): **16/16 pass** (8 tests × 2 engines), after
+the header fix and after every control ran, so the committed screenshots come from green code. The worker suite for the M3 Worker
+changes: unit 26/26, empty D1 1/1, API 49/49, first setup 1/1. These are working-tree numbers; the lead's come from `rig qa`.
+- `visit.spec.mjs`, 7 tests, following PLAN's M3 list: a first visit by real input; the notice on the right unit (including Back,
+  pick Frank); screening "Yes" (no `POST /api/visitor/signin` seen by `page.on('request')`, and the building total unchanged);
+  blocked (by arrangement, restricted, outside hours); the link (another phone, staff and automatic sentences, yesterday's link
+  after midnight showing only the 410 text); privacy (30 days, then 14).
+- `targets.spec.mjs`, 1 long test across every step: buttons at least 56 px and hit-tested; Sign in and Sign out at least 64 px;
+  SAMPLE on `/`, `/out/` and `/privacy/`; no sideways scroll; Sign in contrast at least 4.5; the sticky header.
+- Screenshots of every step (details, search, resident, signed in, signed out, notice, stop, the three blocked screens, staff and
+  automatic sign-out, link expired, privacy) in `app/tests/visit/shots/`, both engines.
+
+**A check that measured nothing, and the bug it was hiding (DONE).** My first "sticky header never covers" check passed while the
+header was covering buttons. At 390 px the home name wraps and the header is about 112 px tall, but the scroll padding was a fixed
+96 px. The lead's `expectTapTarget` hit-tests only a button's centre, and on a short page the buttons never scrolled far enough to
+reach the header. I made the check real in three steps, recording each:
+1. A hit-test just inside the top edge, plus a guard that at least one target actually reaches the header. The run went red on
+   the guard in both engines ("at least one target must reach the header, or the sticky header check measures nothing",
+   Received 0): the check had been measuring nothing.
+2. The test home gets 8 screening questions (the home may have up to 10), so the first answers can scroll up under the header.
+   Against the old CSS it then went red for the real reason in both engines: "under the sticky header: No: its top edge is
+   covered", with the tap landing on `<div class="v-inner">`.
+3. The fix: `visit.js` keeps `--header-h` at the header's measured height (`ResizeObserver`), and the page's
+   `scroll-padding-top` is that height plus 16 px (CSS fallback 0, so nothing else rescues it). The header is also a little
+   more compact. Green in both engines. **Control (r) `negative:header-covers`** removes the measurement in a copy and went red.
+
+### Negative controls (DONE)
+
+`cd app && node tests/visit/negative-all.mjs` (port 8406): each copies `app/public` and `worker/` into `app/.negative/visit-<name>/`,
+patches the copy (the anchor must occur exactly once), runs one named test against a Worker started from the copy, and passes only
+if that test is the one that failed, with the named text in the output. All went **RED as intended**; the output is in
+`app/tests/visit/negative-control.log`.
+
+| control | break in the copy | red test and output |
+|---|---|---|
+| (m) `stale-notice` | `sign-in.js` `pick()` no longer clears `#unit-notices` | the notice on the right unit: the `[data-severity="outbreak"]` count is not 0 after picking Frank |
+| (n) `yes-posts` | `sign-in.js` `answer()` submits the sign-in on a "Yes" (the server's 403 then shows the same stop message) | screening: "a Yes must not send a sign-in", Received one POST |
+| (o) `overlay` | `visit.js` adds a transparent full-screen cover over the signed-in screen | a first visit: `tap(Sign out)` "something else is on top" |
+| (p) `forget-me` | `sign-in.js` `remember()` no longer stores name and phone | a first visit: `#name` `toHaveValue('Linda K. (SAMPLE)')` fails on the return to `/` |
+| (r) `header-covers` | `visit.js` never measures the header (scroll padding 16 px) | targets: "its top edge is covered", the tap lands on the home name |
+
+(n) is worded differently from PLAN ("treats Yes as No"). A copy that treats Yes as No shows no stop screen at all, so the test
+fails at `#stop` and never reaches the no-POST check PLAN names. My copy sends the "Yes" instead: the screen looks the same (the
+server's 403 carries the same words), so only the no-POST check can catch it.
+
+### For the lead
+
+1. **Your journey spec fails at step 3 on vl2's page, not the visitor pages.** Line 74, `desk.getByText(/1 of 1 found/)`,
+   matches two elements after the roll call ends (`#roll-call-progress` and the per-unit count `.roll-unit-count`), a strict-mode
+   violation in both engines. I ran an untracked scratch copy (deleted afterwards) with only that locator narrowed to
+   `#roll-call-progress` and screenshots off, on my port 8404. **It passed in chromium-tablet and webkit-tablet**, so every
+   visitor id, word and behaviour the journey uses works on these pages. I did not edit your file. Its screenshots from my first
+   run landed in `app/tests/journey/shots/` in this worktree; I deleted them, uncommitted.
+2. **`GET /api/visitor/start` → `screening.stop_message`** needs a line in API.md (committed in `0be21fb`; see the contract
+   addition above).

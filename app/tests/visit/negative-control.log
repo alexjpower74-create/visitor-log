@@ -1,0 +1,69 @@
+
+=== visit negative:stale-notice — 2026-09-14T21:07:12.320Z
+break: sign-in.js pick() no longer clears #unit-notices before showing the next resident
+patched: app/public/visit/sign-in.js
+run: npx playwright test tests/visit/visit.spec.mjs --project chromium-390 --grep "the notice on the right unit: the Cove outbreak shows for Agnes and must be confirmed; Back, pick Frank: no outbreak notice anywhere and Sign in is enabled" (E2E_PORT 8406, E2E_WORKER_DIR app/.negative/visit-stale-notice/worker)
+  ✘  1 [chromium-390] › tests/visit/visit.spec.mjs:102:1 › the notice on the right unit: the Cove outbreak shows for Agnes and must be confirmed; Back, pick Frank: no outbreak notice anywhere and Sign in is enabled (9.7s)
+    Error: expect(locator).toHaveCount(expected) failed
+    Locator:  locator('[data-severity="outbreak"]')
+    Expected: 0
+    Received: 1
+           - unexpected value "1"
+    .negative/visit-stale-notice/results/visit-visit-the-notice-on--96b61-here-and-Sign-in-is-enabled-chromium-390/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== visit negative:yes-posts — 2026-09-14T21:07:26.121Z
+break: sign-in.js answer() submits the sign-in on a "Yes" instead of stopping on the phone
+patched: app/public/visit/sign-in.js
+run: npx playwright test tests/visit/visit.spec.mjs --project chromium-390 --grep "screening: a Yes stops at once with the home's words, hides Sign in and sends nothing; I tapped Yes by mistake, all No, signed in" (E2E_PORT 8406, E2E_WORKER_DIR app/.negative/visit-yes-posts/worker)
+  ✘  1 [chromium-390] › tests/visit/visit.spec.mjs:140:1 › screening: a Yes stops at once with the home's words, hides Sign in and sends nothing; I tapped Yes by mistake, all No, signed in (1.9s)
+    Error: a Yes must not send a sign-in
+    expect(received).toEqual(expected) // deep equality
+    - Expected  - 1
+    + Received  + 3
+    > 163 |   expect(posts, 'a Yes must not send a sign-in').toEqual([])
+    .negative/visit-yes-posts/results/visit-visit-screening-a-Ye-c87c1-by-mistake-all-No-signed-in-chromium-390/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== visit negative:overlay — 2026-09-14T21:07:32.071Z
+break: visit.js puts a transparent full-screen cover over the signed-in screen, so a tap on Sign out hits the cover
+patched: app/public/visit/visit.js
+run: npx playwright test tests/visit/visit.spec.mjs --project chromium-390 --grep "a first visit by real input: details, search, Mary, signed in at 3:00 PM and on the desk, / shows it again, signed out at 3:40 PM, remembered, Not you? forgets" (E2E_PORT 8406, E2E_WORKER_DIR app/.negative/visit-overlay/worker)
+  ✘  1 [chromium-390] › tests/visit/visit.spec.mjs:35:1 › a first visit by real input: details, search, Mary, signed in at 3:00 PM and on the desk, / shows it again, signed out at 3:40 PM, remembered, Not you? forgets (1.9s)
+    Error: tap(Sign out) hit-test at 195,391: something else is on top
+    expect(received).toBe(expected) // Object.is equality
+    Expected: ""
+    Received: "<div class=\"cover\" style=\"position:fixed;inset:0;z-index:50;background:transparent\"></div>"
+    >  97 |   expect(await hitTest(locator, x, y), `tap(${label}) hit-test at ${Math.round(x)},${Math.round(y)}: something else is on top`).toBe('')
+    .negative/visit-overlay/results/visit-visit-a-first-visit--64a6f--remembered-Not-you-forgets-chromium-390/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== visit negative:forget-me — 2026-09-14T21:07:37.985Z
+break: sign-in.js remember() no longer saves name and phone on this phone
+patched: app/public/visit/sign-in.js
+run: npx playwright test tests/visit/visit.spec.mjs --project chromium-390 --grep "a first visit by real input: details, search, Mary, signed in at 3:00 PM and on the desk, / shows it again, signed out at 3:40 PM, remembered, Not you? forgets" (E2E_PORT 8406, E2E_WORKER_DIR app/.negative/visit-forget-me/worker)
+  ✘  1 [chromium-390] › tests/visit/visit.spec.mjs:35:1 › a first visit by real input: details, search, Mary, signed in at 3:00 PM and on the desk, / shows it again, signed out at 3:40 PM, remembered, Not you? forgets (10.1s)
+    Error: expect(locator).toHaveValue(expected) failed
+    Locator:  locator('#name')
+    Expected: "Linda K. (SAMPLE)"
+    Received: ""
+           - unexpected value ""
+    .negative/visit-forget-me/results/visit-visit-a-first-visit--64a6f--remembered-Not-you-forgets-chromium-390/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== visit negative:header-covers — 2026-09-14T21:12:36.752Z
+break: visit.js no longer keeps --header-h at the sticky header's height (scroll padding falls back to 16 px)
+patched: app/public/visit/visit.js
+run: npx playwright test tests/visit/targets.spec.mjs --project chromium-390 --grep "targets: every step at 390 — buttons 56 px and hit-tested, Sign in and Sign out 64 px, SAMPLE, no sideways scroll, contrast, the sticky header" (E2E_PORT 8406, E2E_WORKER_DIR app/.negative/visit-header-covers/worker)
+  ✘  1 [chromium-390] › tests/visit/targets.spec.mjs:27:1 › targets: every step at 390 — buttons 56 px and hit-tested, Sign in and Sign out 64 px, SAMPLE, no sideways scroll, contrast, the sticky header (2.4s)
+    Error: under the sticky header: No: its top edge is covered
+    expect(received).toBe(expected) // Object.is equality
+    Expected: ""
+    Received: "<span id=\"home-name\" class=\"home-name\">SAMPLE Harbourview Care Home (demo)</span>"
+    .negative/visit-header-covers/results/visit-targets-targets-ever-529f8--contrast-the-sticky-header-chromium-390/test-failed-1.png
+  1 failed
+RESULT: RED as intended

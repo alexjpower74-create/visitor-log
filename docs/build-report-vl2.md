@@ -108,3 +108,120 @@ Rebased on main (23c63e8) first.
   `negative:staff` points at it; I add it with the first control in M2).
 - At 390 the Residents rows put Remove on a second line under Change (buttons wrap in the row). Readable; not changed.
 - The mock still refuses a missing `resident_id` with 404 instead of API.md's new 400. Development only.
+
+## Cross-review of vl1 M1 (read only, 2026-09-14, main at f29980d)
+
+Read `worker/src/*.js` against docs/API.md (including 6be6cde and 508c11a) for every route and field the staff pages and settings
+call. I did not edit vl1's files.
+
+### Mismatches with API.md
+1. **`POST /api/staff/visits` does not check a missing resident first** (`staff.js` `staffSignIn`, lines 54–66). API.md: `resident_id`
+   missing or `""` → 400 `field: "resident_id"` "Please pick who they are visiting.", and the order is resident missing, name, phone,
+   unknown resident (404), `screened`, `already_in`. The Worker checks name, then phone, then answers `""` with 404 "We can't find
+   that resident." (no `field`). Seen from the page: an empty form shows "Please type your name." under the name, not the resident
+   error under `#manual-resident`; a named visitor with no resident picked gets the 404 text in `#manual-error`.
+2. **`POST /api/staff/visits` name error uses the visitor's words** (`staff.js` line 58 `MSG.name` = "Please type your name."). API.md
+   for the staff route: `field: "visitor_name"` "Please type their name.".
+   My M2 specs do not assert either message (they would be red against this Worker); `manual.spec` asserts only what M2's list
+   names. vl1 to fix; I add the missing-resident check to `manual.spec` once it is on main.
+
+### Checked and matching (what my pages rely on)
+- Errors: `{ error, code, field? }` from `ApiError.extra`; wrong PIN 401 `field: "pin"` "That PIN is not right."; no/expired token 401
+  "Please sign in again."; staff token on `/api/settings*` 403 "Only a manager can change the settings." (role checked before the route
+  is matched, so it holds for every settings path).
+- `GET /api/info`: `sample` boolean, `retention_days`, `today`, `date_label`, `time_label`.
+- `GET /api/staff/building`: every active unit in order with `count: 0` when empty; `visits` oldest first; `total` = sum; unit `notices`
+  = whole home + own (the page now shows `unit: null` ones once above the cards); `auto_today` today's auto sign-outs newest first;
+  `roll_call: null` always in M1.
+- `StaffVisit`: `visitor_phone` is `""` for no phone (not null); `signed_in_by` null for QR, the staff name for staff; `screened`,
+  `overdue` booleans; `out_label`/`out_kind` null while in; `due_label` always a label.
+- `GET /api/staff/residents`: `screening_enabled`, units with `restricted`, active residents by first name with `by_arrangement`.
+- `POST /api/staff/visits`: `warnings` `[{ code, message }]` in checks 3, 4, 5, 9 order with the visitor messages; a blank or
+  whitespace phone is no phone; `screened !== true` with screening on → 400 `field: "screened"` with the exact message.
+- `POST /api/staff/visits/:id/signout`: 409 `not_in` "That visitor is already signed out." (also for a passed auto sign-out).
+- `GET /api/staff/visits`: bad date 400 `field: "date"` ("Pick a real date."); unknown unit 404; nothing older than retention.
+- `GET /api/settings`: `active` booleans on units, residents, staff; `max_visitors_per_resident` null for no limit; notices newest
+  first with `created_label` "Mon Sep 14, 3:00 PM"; inactive rows included.
+- `PUT /api/settings/home`: digit strings accepted; `max_visitors_per_resident` `null` or `""` = no limit; retention message exact;
+  `phone: ""` allowed.
+- `PUT /api/settings/screening`: `enabled` must be a boolean (the page sends one); questions checked before the stop message, so the
+  switch-on-no-questions Save shows "Add at least one question before you turn screening on." under the questions; an `id` that
+  exists is kept.
+- Notices: `unit_id` `null`/`""` = whole home, unknown unit 404 (no field; the page shows it in `#notice-error`); `active` must be a
+  boolean on PUT; DELETE answers `{ settings }`.
+- The 24:00 window (`hours.js`): `"24:00"` is the only hour 24; close `00:00` is refused (close ≥ 00:01), so the page's rule "a time input
+  of 00:00 in To is sent as 24:00" is needed and matches; `hoursLabel` reads "midnight"; `autoOutAt`/`openNow` treat 24:00 as the next
+  midnight. Unit writes are M2, so this is read, not exercised.
+- `GET /api/visitor/start` (the manual tab's question texts): `questions` only while screening is on.
+
+### What M1 answers 404 (M2 work) and how the pages behave until then
+Roll call (`/api/staff/rollcall*`), contacts JSON and CSV, and settings units / residents / staff writes are not routed: after the role
+check and maintenance the Worker answers 404 `not_found` "There is nothing here.". The pages show that text as is: the Roll call tab in
+`#load-error` (every 3 s poll), Show and Download CSV under the contact form, Save / Put back / Turn off on Units, Residents and Staff
+in the form or the row. Nothing breaks; those specs wait for M3.
+
+## M2 — Playwright against the real Worker (DONE, 2026-09-14)
+
+Rebased on main (f29980d, vl1 M1 Worker merged). Cross-review above committed first (8703aa2).
+
+### Specs (`app/tests/staff/`, `E2E_PORT=8403 npx playwright test tests/staff`)
+**104 passed, 0 failed, 0 skipped** — 26 tests × chromium-390, chromium-tablet, webkit-390, webkit-tablet, 5.4 min, one Worker.
+- `building.spec.mjs` (8): wrong PIN text + 401 body via `waitForResponse`; API visitors on the right cards with `.unit-count`,
+  `#building-total` and every row equal to `GET /api/staff/building`; Sign out by real taps → row, unit count and total drop within
+  2 s (inside one poll) and the API agrees, still so after a poll; Cancel leaves it; Harbour in at 11:00 AM → `data-overdue="true"` and
+  "Overdue since 11:30 AM" within 7 s of `setNow` 11:30 AM; `setNow` 9:00 PM → gone from Harbour, in `#auto-today` with "9:00 PM";
+  a Cove notice on the Cove card only (`sevColour` = outbreak) and a whole-home notice once in `#building-notices`; a poll that brings
+  a new visitor while a confirmation is open leaves it open, and Yes, sign out still works after.
+- `manual.spec.mjs` (2): Ellen with no phone → the by-arrangement warning word for word, "Signed in Jean W. (SAMPLE) at 3:00 PM", the
+  API has `method: "staff"`, `visitor_phone: ""`, signed in by Carl, and the row shows "Signed in by staff"; screening on → Sign in
+  without the box shows the API's 400 text under `#manual-screened`, building total 0 and day log count 0; with the box → recorded,
+  `screened: true`.
+- `settings-m1.spec.mjs` (9): staff PIN → 403 "Only a manager can change the settings."; outbreak for Cove by real input → a phone
+  context's `GET /api/visitor/residents/r_agnes` has it in `unit_notices` (and `needs_notice_confirm`), `r_frank` has none; Whole home →
+  `home_notices` for Frank, Agnes and Mary, no unit notice; turn off → gone for visitors; switch on + no questions → the API's message
+  under the questions; Use the example → no PUT within 2 s, `GET /api/settings` still no questions and off, label, inputs and stop
+  message exact, switch off; edit + switch on + Save → the API has the edited questions and `enabled: true`; retention 14 → the line
+  and `/api/info`; retention 0 → the API's message under `#retention-days`, still 30.
+- `targets.spec.mjs` (7): SAMPLE on `/staff/` (keypad and signed in), `/settings/`, `/settings/door-sign/`; every visible button and
+  `a.button` on the staff keypad, In the building (also with a confirmation open), Roll call, Day log, Contact list, Sign someone in,
+  the settings keypad, all seven settings tabs and the door sign is ≥ 44 px (≥ 64 px for keys, Enter, Clear, row Sign out and its Yes,
+  Sign in, roll call buttons) and hit-tests to itself (`expectTapTarget`), with no sideways scroll on each; contrast of Sign in, Show and
+  Add notice ≥ 4.5; the sticky header (below); hours labels keep each time on one line; resident rows put Change and Remove side by side.
+- `button.found` ≥ 64 px is in the size rule but no roll call can be started on the M1 Worker, so it is not measured yet (M3).
+- To measure a button the spec scrolls it to the middle of the screen with `scrollIntoView` before `expectTapTarget` (reading sizes and
+  hit-tests only; no app state is set).
+
+### The three screenshot fixes
+1. **Opaque sticky header.** `.app-header` background is `var(--ground)` (was `rgba(11, 16, 32, 0.78)` behind a blur). Test: a row's
+   Sign out is scrolled until its middle is at the header's middle; `elementFromPoint` there is inside the header; the header's computed
+   background alpha is 1; `tap()` on that Sign out still opens its confirmation. Note: `elementFromPoint` alone cannot catch a see-through
+   header (the header element is on top either way), so the alpha check is the part that goes red. Scrolling: real `mouse.wheel` in
+   Chromium; Playwright's mobile WebKit has no wheel ("Mouse wheel is not supported in mobile WebKit"), no touch drag, and ArrowDown
+   presses did not move the page (tried, red), so in WebKit only the page is scrolled with `window.scrollBy`, recorded as a test annotation.
+2. **Times stay together.** `timeText()` in `ui.js` wraps each "9:00 PM" / "midnight" in `span.time` (`white-space: nowrap`), used for the
+   unit hours on In the building, "In since", and the Units and hours rows; `textContent` is unchanged (the spec compares it to the API's
+   `hours_label`). Test: every `.time` has exactly one client rect.
+3. **Change and Remove side by side on a phone.** At ≤ 600 px a list row's words take the whole line and its buttons sit together under
+   them. Test: Change and Remove tops differ by < 2 px on every resident row, both 44 px and hit-testing to themselves.
+Screenshots retaken with the mock (`shots-mock.mjs all`, all good in both engines); looked at chromium 390 In the building and Residents.
+
+### Negative controls (`app/tests/staff/negative-*.mjs`, `node tests/staff/negative-all.mjs`, port 8407) — 8 of 8 RED as intended
+Full output in `app/tests/staff/negative-control.log`. Each copies `app/public` + `worker` into `app/.negative/<name>/`, patches one
+anchor that must occur exactly once, runs the one named test, and passes only on "1 failed" with that title and the expected words.
+| control | break (in the copy) | test that went red | red output |
+|---|---|---|---|
+| (a) stale-total | `#building-total` rendered once, never again | building: Sign out by real taps… | `Error: the total drops with the row` Expected "2" Received "3" |
+| (b) no-overdue | `data-overdue` always "false", no chip | building: …overdue within one poll of 11:30 AM | `Error: overdue within one 5 s poll` Expected "true" Received "false" |
+| (c) overlay | transparent `::after` over every visit row | building: Sign out by real taps… | `tap(Sign out Paul) hit-test at 925,413: something else is on top` (received the `article.visit-row`) |
+| (d) notice-unit | Whole home sends the first unit | settings-m1: a Whole home notice goes to home_notices… | `Error: a Whole home notice reaches every visitor` (home_notices empty) |
+| (e) example-saves | Use the example also submits the form | settings-m1: Use the example fills the form but saves nothing… | `Error: Use the example sent a save` (a PUT request was seen) |
+| fix 1 header-see-through | header background back to rgba(11, 16, 32, 0.78) | targets: the sticky header is opaque… (chromium-390) | `Error: the sticky header is opaque (background alpha 1)` Expected 1 Received 0.78 (red again after the WebKit scroll edit) |
+| fix 2 time-wraps | `.time` loses `white-space: nowrap` | targets: hours labels keep each time on one line (chromium-390) | `Error: a time label broke across lines on In the building` |
+| fix 3 stacked-buttons | phone row rule removed | targets: resident rows put Change and Remove side by side (chromium-390) | `Error: Change and Remove sit side by side` Expected < 2 Received 67.6 |
+The M1b lib self-check (missing, repeated, no-op anchor → exit 2) stands; these are the lib's first real runs and its red decision held.
+
+### Left undone / for the lead
+- vl1: the two staff sign-in mismatches in the cross-review (missing `resident_id` not checked first; "Please type their name.").
+  `manual.spec` gets those checks once the fix is on main.
+- M3 specs (roll call, log and contacts, units / residents / staff, door sign) and controls (f)–(h) wait for vl1 M2.
+- The WebKit scroll in the header test is script, not input (see fix 1); the lead may prefer a helper for it in `helpers.mjs`.

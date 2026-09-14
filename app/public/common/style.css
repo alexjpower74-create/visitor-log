@@ -24,6 +24,8 @@ a { color: var(--accent); }
 .muted { color: var(--muted); }
 .faint { color: var(--faint); }
 .small { font-size: 14px; }
+/* A time label ("9:00 PM") never breaks between the time and AM/PM. */
+.time { white-space: nowrap; }
 .stack > * + * { margin-top: 12px; }
 .row-flex { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 .spacer { flex: 1 1 auto; }
@@ -168,11 +170,8 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); outline
   position: sticky;
   top: 0;
   z-index: 20;
-  background: rgba(11, 16, 32, 0.92);
+  background: var(--ground); /* opaque: a row scrolled under the header must not read through it */
   border-bottom: 1px solid var(--line);
-}
-@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
-  .app-header { background: rgba(11, 16, 32, 0.78); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
 }
 .app-header .inner {
   max-width: 1120px;
@@ -317,6 +316,8 @@ td .kind { color: var(--muted); font-size: 13px; margin-left: 4px; }
   }
   [role="tablist"]::-webkit-scrollbar { display: none; }
   [role="tab"] { flex: none; padding: 0 14px; white-space: nowrap; }
+  /* Phone list rows: the words take the whole line, the row's buttons sit side by side under them. */
+  .list-row .grow { flex-basis: 100%; }
 }
 
 @media print {

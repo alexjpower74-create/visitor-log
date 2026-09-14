@@ -47,3 +47,9 @@ Newest at the bottom.
     the settings." The page keeps the signed-in name from the sign-in answer; there is no `/api/me` route.
 17. **A staff sign-in with no resident picked is a 400 on `resident_id`**, checked before the name and the phone, so the error
     lands under the first field a person would fix (vl2's question, added to API.md).
+18. **Closing a unit never hides a visitor who is still in.** The building view lists every open unit and then any closed unit
+    that still has visitors in the building, marked closed, and the total counts them (vl1's question, 18:19). In a fire drill that
+    list is the one that must not leave anyone out.
+19. **vl1's calls where API.md was silent, now contract:** a bad or empty contact-list date is a 400 on `from`/`to`; a resident on a
+    closed or unknown unit is a 400 on `unit_id` so it lands under the unit picker; staff names 1–60 characters and roles `manager` or
+    `staff`; the last-manager guard also catches a role change; a unit keeps its own name when edited.

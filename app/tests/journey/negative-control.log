@@ -1,0 +1,54 @@
+
+=== negative:journey — 2026-09-14T21:27:20.152Z
+break: src/world.js unitNoticesOf returns every active notice for every resident
+run: E2E_PORT=8409 npx playwright test tests/journey --project=chromium-tablet (against the copy)
+
+RESULT: NOT THIS CONTROL'S RED — exit 0; the failing line was somewhere else or nowhere
+
+=== negative:journey — 2026-09-14T21:31:30.970Z
+break: src/world.js unitNoticesOf returns every active notice for every resident
+run: E2E_PORT=8409 npx playwright test tests/journey --project=chromium-tablet (against the copy)
+    Error: expect(locator).toHaveCount(expected) failed
+      112 |   await expect(grace.locator('#resident-name')).toHaveText('Frank O. (SAMPLE)')
+      113 |   await expect(grace.locator('#sign-in')).toBeEnabled()
+    > 114 |   await expect(grace.getByText(OUTBREAK)).toHaveCount(0)
+      116 |   await expect(grace.locator('#signed-in')).toBeVisible()
+    tests/results/journey-journey-a-whole-da-33592--contacts-closing-retention-chromium-tablet/test-failed-2.png
+    tests/results/journey-journey-a-whole-da-33592--contacts-closing-retention-chromium-tablet/test-failed-5.png
+    tests/results/journey-journey-a-whole-da-33592--contacts-closing-retention-chromium-tablet/test-failed-4.png
+    tests/results/journey-journey-a-whole-da-33592--contacts-closing-retention-chromium-tablet/test-failed-3.png
+    tests/results/journey-journey-a-whole-da-33592--contacts-closing-retention-chromium-tablet/test-failed-1.png
+  1 failed
+RESULT: RED as intended (exit 1) at: await expect(grace.getByText(OUTBREAK)).toHaveCount(0)
+
+=== negative:journey — 2026-09-14T21:34:20.576Z
+break: src/world.js unitNoticesOf returns every active notice for every resident
+run: E2E_PORT=8409 npx playwright test tests/journey --project=chromium-tablet (against the copy)
+    Error: expect(locator).toHaveCount(expected) failed
+      112 |   await expect(grace.locator('#resident-name')).toHaveText('Frank O. (SAMPLE)')
+      113 |   await expect(grace.locator('#sign-in')).toBeEnabled()
+    > 114 |   await expect(grace.getByText(OUTBREAK)).toHaveCount(0)
+      116 |   await expect(grace.locator('#signed-in')).toBeVisible()
+    tests/results/journey-journey-a-whole-da-33592--contacts-closing-retention-chromium-tablet/test-failed-2.png
+    tests/results/journey-journey-a-whole-da-33592--contacts-closing-retention-chromium-tablet/test-failed-4.png
+    tests/results/journey-journey-a-whole-da-33592--contacts-closing-retention-chromium-tablet/test-failed-5.png
+    tests/results/journey-journey-a-whole-da-33592--contacts-closing-retention-chromium-tablet/test-failed-1.png
+    tests/results/journey-journey-a-whole-da-33592--contacts-closing-retention-chromium-tablet/test-failed-3.png
+  1 failed
+RESULT: RED as intended (exit 1) at: await expect(grace.getByText(OUTBREAK)).toHaveCount(0)
+
+=== negative:journey — 2026-09-14T22:23:12.313Z
+break: src/world.js unitNoticesOf returns every active notice for every resident
+run: E2E_PORT=8409 npx playwright test tests/journey --project=chromium-tablet (against the copy)
+    Error: expect(locator).toHaveCount(expected) failed
+      112 |   await expect(grace.locator('#resident-name')).toHaveText('Frank O. (SAMPLE)')
+      113 |   await expect(grace.locator('#sign-in')).toBeEnabled()
+    > 114 |   await expect(grace.getByText(OUTBREAK)).toHaveCount(0)
+      116 |   await expect(grace.locator('#signed-in')).toBeVisible()
+    tests/results/journey-journey-a-whole-da-33592--contacts-closing-retention-chromium-tablet/test-failed-2.png
+    tests/results/journey-journey-a-whole-da-33592--contacts-closing-retention-chromium-tablet/test-failed-5.png
+    tests/results/journey-journey-a-whole-da-33592--contacts-closing-retention-chromium-tablet/test-failed-4.png
+    tests/results/journey-journey-a-whole-da-33592--contacts-closing-retention-chromium-tablet/test-failed-3.png
+    tests/results/journey-journey-a-whole-da-33592--contacts-closing-retention-chromium-tablet/test-failed-1.png
+  1 failed
+RESULT: RED as intended (exit 1) at: await expect(grace.getByText(OUTBREAK)).toHaveCount(0)

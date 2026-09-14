@@ -119,6 +119,14 @@ rows) before counting zero rows. Re-run pinned at `516a3e2` (19:04): **journey 2
   still in shows a green "Open" pill; (2) "0 in the building" shows before the first answer, a guessed zero on a slow tablet; (3) a
   refused Show leaves the previous contact list under the new dates; (4) the 390 header cuts "(SAMPLE)" off the staff name.
 - **The lead's journey spec** was run by vl1 and failed at a strict-mode locator on the roll call page; fixed (bccf7ff).
+- **vl2 fixed vl1's four findings (M4, a756927)**, each with a spec on the real Worker and a control proved red: a closed unit shows
+  "Unit closed" and neither the Open pill nor the hours line; "… in the building" until the first answer (and the connection error if it
+  fails); a refused Show clears the table and count; the staff name keeps its own line at 390. Staff specs 180 passed; 15 of 15 staff
+  controls red. vl2 recorded one control that stayed green at first ("measured nothing": it put the 0 back in the page, but the keypad's
+  reset already wrote "…"), then broke both places and it went red.
+- **vl2 drove vl1's visitor pages** at 390 in both engines against the real Worker: 86 of 86 checks. **One finding, routed to vl1:**
+  after a screening "Yes", tapping "No" on the same question leaves the stop message up with no Sign in (nothing is sent, but the page
+  contradicts itself).
 
 ## Known gaps
 

@@ -15,6 +15,12 @@
     "negative:retention-setting": "node tests/negative-retention-setting.mjs",
     "negative:retention-boundary": "node tests/negative-retention-boundary.mjs",
     "negative:link-expiry": "node tests/negative-link-expiry.mjs",
-    "negative:hours-close": "node tests/negative-hours-close.mjs"
+    "negative:hours-close": "node tests/negative-hours-close.mjs",
+    "negative:csv-guard": "node tests/negative-csv-guard.mjs",
+    "negative:rollcall-after-start": "node tests/negative-rollcall-after-start.mjs",
+    "negative:last-manager": "node tests/negative-last-manager.mjs",
+    "negative:ratelimit": "node tests/negative-ratelimit.mjs",
+    "negative:contacts-unit": "node tests/negative-contacts-unit.mjs",
+    "first-setup": "node tools/first-setup.mjs"
   }
 }

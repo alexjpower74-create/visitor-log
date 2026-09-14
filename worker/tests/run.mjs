@@ -1,9 +1,10 @@
-// `npm test`: pure unit tests, then the API suites against a fresh local Worker in TEST_MODE. Adapted from Daycare Day Sheet.
-//   PORT (default 8402, inspector PORT+10). State in worker/.state-<PORT>, wiped first and removed after.
-//   If something already answers on PORT, it is used as is and not stopped (unless --fresh).
+// `npm test`: pure unit tests, the API suites against a fresh local Worker in TEST_MODE, then the first-setup check against a
+// fresh Worker WITHOUT TEST_MODE. Adapted from Daycare Day Sheet.
+//   PORT (default 8402, inspector PORT+10). State in worker/.state-<PORT> (and .state-<PORT>-setup), wiped first and removed after.
+//   If something already answers on PORT, it is used as is and not stopped (unless --fresh), and the setup check is skipped.
 //   --unit-only       unit tests only
 //   --api-only        skip the unit tests
-//   --grep <regex>    only API tests whose name matches
+//   --grep <regex>    only API tests whose name matches (the setup check is skipped)
 //   --fresh           refuse to reuse a Worker already answering on PORT (negative controls must test their own copy)
 // Exit code is non-zero when anything fails. Local only: never --remote.
 import { spawn, spawnSync } from 'node:child_process'
@@ -21,7 +22,9 @@ const env = { ...process.env, CI: '1', WRANGLER_SEND_METRICS: 'false', NO_COLOR:
 const reporter = process.env.TEST_REPORTER ? [`--test-reporter=${process.env.TEST_REPORTER}`] : []
 // API suites, in order. api-empty.test.mjs runs first, on its own, before anything resets the D1.
 const API_FILES = ['tests/api.test.mjs', 'tests/count-property.test.mjs', 'tests/api-m2.test.mjs']
-const NOT_UNIT = new Set(['api-empty.test.mjs', ...API_FILES.map((f) => path.basename(f))])
+const NOT_UNIT = new Set(['api-empty.test.mjs', 'api-setup.test.mjs', ...API_FILES.map((f) => path.basename(f))])
+// A made-up home for the first-setup check only (no SAMPLE rows on purpose: that is what the check proves).
+const SETUP = { home: 'First Setup Check Home', phone: '709-555-0150', manager: 'Setup Check Manager', pin: '5827' }
 
 function runNodeTests(files, extra = [], extraEnv = {}) {
   const r = spawnSync(process.execPath, ['--test', '--test-concurrency=1', ...reporter, ...extra, ...files],
@@ -46,9 +49,9 @@ function freshState(dir) {
   return wrangler(['d1', 'migrations', 'apply', 'visitor-log', '--local', '--persist-to', dir])
 }
 
-async function startWorker(dir) {
+async function startWorker(dir, testVars = true) {
   const dev = spawn('wrangler', ['dev', '--local', '--port', String(PORT), '--inspector-port', String(PORT + 10), '--persist-to', dir,
-    '--var', 'TEST_MODE:1', '--show-interactive-dev-session=false'],
+    ...(testVars ? ['--var', 'TEST_MODE:1'] : []), '--show-interactive-dev-session=false'],
   { cwd: WORKER, stdio: ['ignore', 'ignore', 'inherit'], env, detached: true })
   const t0 = Date.now()
   while (!(await answers())) {
@@ -114,6 +117,31 @@ if (!flag('--unit-only')) {
   if (dev) {
     await stopWorker(dev)
     rmSync(STATE, { recursive: true, force: true })
+  }
+
+  if (grep) {
+    console.log('\n== setup: skipped (--grep)')
+  } else if (reused) {
+    console.log(`\n== setup: SKIPPED — a Worker this run did not start holds ${BASE}; run again with the port free`)
+  } else {
+    const SSTATE = path.join(WORKER, `.state-${PORT}-setup`)
+    const sqlFile = path.join(SSTATE, 'first-setup.sql')
+    console.log(`\n== setup: tools/first-setup.mjs applied to a fresh D1, Worker on ${BASE} WITHOUT TEST_MODE`)
+    let ok = freshState(SSTATE)
+    ok = ok && spawnSync(process.execPath, ['tools/first-setup.mjs', '--home', SETUP.home, '--phone', SETUP.phone, '--manager', SETUP.manager,
+      '--pin', SETUP.pin, '--out', sqlFile], { cwd: WORKER, stdio: 'inherit' }).status === 0
+    ok = ok && wrangler(['d1', 'execute', 'visitor-log', '--local', '--persist-to', SSTATE, '--file', sqlFile])
+    const setupDev = ok ? await startWorker(SSTATE, false) : null
+    if (!setupDev) {
+      console.error('the first-setup check could not start')
+      failed = 1
+    } else {
+      failed |= runNodeTests(['tests/api-setup.test.mjs'], [], {
+        SETUP_BASE: BASE, SETUP_HOME: SETUP.home, SETUP_PHONE: SETUP.phone, SETUP_MANAGER: SETUP.manager, SETUP_PIN: SETUP.pin,
+      })
+      await stopWorker(setupDev)
+    }
+    rmSync(SSTATE, { recursive: true, force: true })
   }
 }
 

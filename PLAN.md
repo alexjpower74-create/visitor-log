@@ -377,8 +377,8 @@ reviews vl1's visitor pages against Design at the end), writes `app/tests/journe
 the nurse's-desk tablet sees them on Harbour wing → a roll call is started and they are ticked found → the visitor signs out on their
 phone and the count drops → the manager adds an outbreak notice for Cove unit → a visitor for Agnes sees it and confirms, a visitor for
 Frank does not see it → screening on with edited example questions → a "yes" is stopped and nothing is recorded → the contact list CSV
-for today has the visitors → 9:00 PM auto sign-out shows as "Auto at closing" and in "not confirmed" → the next day the old link is dead
-→ 31 days later the visits are gone; chromium + webkit) and its negative control, runs `rig qa --ref <sha> --port 8409` for the Worker
+for today has the visitors → in the evening the Cove visitor's automatic sign-out at 7:00 PM closing shows in "not confirmed" → the next
+day the old link is dead → 31 days later the visits are gone; chromium + webkit) and its negative control, runs `rig qa --ref <sha> --port 8409` for the Worker
 suite, every negative control and the whole Playwright suite, takes `pwshot` screenshots into `docs/shots/` from `npm run demo`, writes
 README / DEPLOY / build report, pushes the private repo, closes the slice tabs by id, removes worktrees, writes the status file.
 

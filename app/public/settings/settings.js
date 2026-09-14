@@ -1,7 +1,7 @@
 // Settings (manager only): Notices, Screening, Visits and privacy, Units and hours, Residents, Staff, Door sign.
 // Every write answers with the whole settings object (docs/API.md); lists re-render from it, forms being typed in are left alone.
 import * as api from '/common/api.js'
-import { h, $, $$, plural, noticeCard, homeLine, paintClock, collapsedSection, mountTabs, clearErrors, showError, confirmBox, poller, fillSelect } from '/common/ui.js'
+import { h, $, $$, plural, noticeCard, homeLine, paintClock, timeText, collapsedSection, mountTabs, clearErrors, showError, confirmBox, poller, fillSelect } from '/common/ui.js'
 import { mountKeypad } from '/common/keypad.js'
 import { drawQr } from '/common/qr.js'
 
@@ -328,7 +328,7 @@ function renderUnits() {
     const row = h('div', { class: `list-row${u.active ? '' : ' inactive'}`, 'data-unit-row': u.id },
       h('div', { class: 'grow' },
         h('p', {}, h('strong', {}, u.name), u.active ? null : h('span', { class: 'pill', style: 'margin-left:8px' }, 'Closed')),
-        h('p', { class: 'muted small unit-hours-label' }, u.hours_label)),
+        h('p', { class: 'muted small unit-hours-label' }, ...timeText(u.hours_label))),
       u.active ? edit : null, close, slot, error)
     edit.addEventListener('click', () => startUnitEdit(u))
     close.addEventListener('click', () => {

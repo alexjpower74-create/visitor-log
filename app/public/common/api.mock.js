@@ -329,7 +329,9 @@ function route(s, method, p, q, body, token, now) {
       })
     }
     if (M('POST', /^\/api\/staff\/visits$/)) {
-      const name = checkName(body.visitor_name, 'visitor_name')
+      if (typeof body.resident_id !== 'string' || !body.resident_id) throw bad('resident_id', 'Please pick who they are visiting.')
+      const name = String(body.visitor_name ?? '').trim()
+      if (name.length < 2 || name.length > 60 || !/\p{L}/u.test(name)) throw bad('visitor_name', 'Please type their name.')
       const phone = String(body.visitor_phone ?? '').trim() ? normalPhone(body.visitor_phone, 'visitor_phone') : ''
       const r = s.residents.find((x) => x.id === body.resident_id && x.active)
       if (!r) throw notFound("We can't find that resident. Please see the nurse's desk.")

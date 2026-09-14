@@ -2,7 +2,7 @@
 // Everything comes from docs/API.md through common/api.js. Times and dates are the API's labels, never the browser clock.
 // A poll never re-renders a row with an open confirmation, a row under someone's finger or a row holding focus.
 import * as api from '/common/api.js'
-import { h, $, plural, noticeCard, homeLine, paintClock, mountTabs, clearErrors, showError, confirmBox, poller, addDays, fillSelect } from '/common/ui.js'
+import { h, $, plural, noticeCard, homeLine, paintClock, timeText, mountTabs, clearErrors, showError, confirmBox, poller, addDays, fillSelect } from '/common/ui.js'
 import { mountKeypad } from '/common/keypad.js'
 
 const TABS = [
@@ -222,7 +222,11 @@ function unitCard(u) {
 
 function updateCard(card, u) {
   card.querySelector('.unit-name').textContent = u.name
-  card.querySelector('.unit-hours').textContent = u.hours_label
+  const hours = card.querySelector('.unit-hours')
+  if (hours.dataset.label !== u.hours_label) {
+    hours.replaceChildren(...timeText(u.hours_label))
+    hours.dataset.label = u.hours_label
+  }
   const pill = card.querySelector('.open-pill')
   pill.textContent = u.open_now ? 'Open' : 'Closed'
   pill.className = `pill open-pill ${u.open_now ? 'open' : 'closed'}`
@@ -248,7 +252,7 @@ function visitRow(v) {
         : h('p', { class: 'no-phone' }, 'No phone'),
       h('p', {}, `Visiting ${v.resident.name}, Room ${v.resident.room}`),
       h('div', { class: 'tags' },
-        h('span', { class: 'in-since' }, `In since ${v.in_label}`),
+        h('span', { class: 'in-since' }, ...timeText(`In since ${v.in_label}`)),
         v.method === 'staff' ? h('span', { class: 'pill staff-tag' }, 'Signed in by staff') : null,
         v.overdue ? h('span', { class: 'pill overdue overdue-chip' }, `Overdue since ${v.due_label}`) : null)),
     h('button', { type: 'button', class: 'sign-out-visit' }, 'Sign out'),

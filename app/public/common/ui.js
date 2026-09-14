@@ -44,6 +44,13 @@ export function paintClock(el, dateLabel, timeLabel) {
   el.replaceChildren(h('span', { class: 'clock-date' }, `${dateLabel} · `), h('span', { class: 'clock-time' }, timeLabel))
 }
 
+const TIME_RE = /(\d{1,2}:\d{2} (?:AM|PM)|midnight)/
+/** Text with each time label ("9:00 PM", "midnight") in a span.time that never breaks across lines. textContent is unchanged. */
+export function timeText(text) {
+  return String(text ?? '').split(TIME_RE).filter((s) => s !== '')
+    .map((s) => (new RegExp(`^${TIME_RE.source}$`).test(s) ? h('span', { class: 'time' }, s) : s))
+}
+
 const openSections = new Set()
 /** A collapsed list under a list (closed units, removed residents, staff turned off). Remembers being open across re-renders. */
 export function collapsedSection(key, title, rows) {

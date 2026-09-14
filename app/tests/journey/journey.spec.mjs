@@ -107,8 +107,11 @@ test('a whole day: sign in, roll call, sign out, an outbreak notice on one unit,
   // 7. Grace visits Frank on Lighthouse wing: no outbreak notice anywhere.
   const [, grace] = await phone(T.out)
   await visitorPicks(grace, { name: 'Grace F. (SAMPLE)', phone: '709-555-0133', search: 'fr', residentId: 'r_frank' })
-  await expect(grace.getByText(OUTBREAK)).toHaveCount(0)
+  // Positive first: Frank's details have arrived and been drawn (the page fills the name and enables Sign in in the same step that
+  // draws his unit's notices). Without this the "no outbreak" count below passes on a page that has not loaded yet.
+  await expect(grace.locator('#resident-name')).toHaveText('Frank O. (SAMPLE)')
   await expect(grace.locator('#sign-in')).toBeEnabled()
+  await expect(grace.getByText(OUTBREAK)).toHaveCount(0)
   await tap(grace, grace.locator('#sign-in'), 'Sign in')
   await expect(grace.locator('#signed-in')).toBeVisible()
 
@@ -167,10 +170,17 @@ test('a whole day: sign in, roll call, sign out, an outbreak notice on one unit,
   await setNow(context, T.nextDay)
   await totalIs(desk, 0)
 
-  // 13. 31 days later the day's visits are gone from the day log and the contact list.
-  await setNow(context, T.pastRetention)
+  // 13. The next day the Sep 14 day log still lists the day's three visits (Tom was never recorded)...
   await tap(desk, desk.getByRole('tab', { name: 'Day log' }), 'Day log tab')
   await desk.locator('#log-date').fill('2026-09-14')
+  await expect(desk.locator('[data-log-visit]')).toHaveCount(3, { timeout: 12_000 })
+  // ...and 31 days later they are gone. Reload Sep 14 under the new clock (Previous, then Next): the rows must fall from 3 to 0,
+  // so a screen that never reloaded cannot pass.
+  await setNow(context, T.pastRetention)
+  await tap(desk, desk.locator('#log-prev'), 'Previous day')
+  await expect(desk.locator('#log-date')).toHaveValue('2026-09-13')
+  await tap(desk, desk.locator('#log-next'), 'Next day')
+  await expect(desk.locator('#log-date')).toHaveValue('2026-09-14')
   await expect(desk.locator('[data-log-visit]')).toHaveCount(0, { timeout: 12_000 })
   const later = await staffToken(request, STAFF_PIN, { now: T.pastRetention })
   const contacts = await api(request, 'GET', '/api/staff/contacts?from=2026-09-14&to=2026-09-14&unit=all', undefined, bearer(later), { now: T.pastRetention })

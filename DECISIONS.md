@@ -53,3 +53,14 @@ Newest at the bottom.
 19. **vl1's calls where API.md was silent, now contract:** a bad or empty contact-list date is a 400 on `from`/`to`; a resident on a
     closed or unknown unit is a 400 on `unit_id` so it lands under the unit picker; staff names 1–60 characters and roles `manager` or
     `staff`; the last-manager guard also catches a role change; a unit keeps its own name when edited.
+20. **The visitor's start answer carries the home's stop message** (`screening.stop_message`, vl1 M3). A "Yes" has to stop the
+    sign-in on the phone without sending anything, so the page needs the home's words before any request.
+21. **A closed unit shows "Unit closed" and neither the Open pill nor its hours** (vl2 M4, from vl1's review). A card that said
+    "Open" for a closed unit would be read wrongly in a fire drill.
+22. **The staff count shows "…" until the first answer**, and the connection error if it fails (vl2 M4, from vl1's review). The one
+    number a fire drill reads must never be a guessed zero.
+23. **Changing a screening "Yes" to "No" takes the stop message away only when no "Yes" is left** (vl1, from vl2's review).
+24. **One scripted scroll is accepted in the tests.** Mobile WebKit under Playwright has no wheel or touch drag, so vl2's sticky-header
+    check scrolls with `window.scrollBy` there, recorded as a test annotation; everything else is real taps and typing.
+25. **Staff sessions stay 12 hours.** The journey jumps the clock a month to prove retention, and it signs the desk in again after the
+    jump instead of bending the session rule for the test.

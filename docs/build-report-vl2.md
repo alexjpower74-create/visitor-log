@@ -108,3 +108,54 @@ Rebased on main (23c63e8) first.
   `negative:staff` points at it; I add it with the first control in M2).
 - At 390 the Residents rows put Remove on a second line under Change (buttons wrap in the row). Readable; not changed.
 - The mock still refuses a missing `resident_id` with 404 instead of API.md's new 400. Development only.
+
+## Cross-review of vl1 M1 (read only, 2026-09-14, main at f29980d)
+
+Read `worker/src/*.js` against docs/API.md (including 6be6cde and 508c11a) for every route and field the staff pages and settings
+call. I did not edit vl1's files.
+
+### Mismatches with API.md
+1. **`POST /api/staff/visits` does not check a missing resident first** (`staff.js` `staffSignIn`, lines 54–66). API.md: `resident_id`
+   missing or `""` → 400 `field: "resident_id"` "Please pick who they are visiting.", and the order is resident missing, name, phone,
+   unknown resident (404), `screened`, `already_in`. The Worker checks name, then phone, then answers `""` with 404 "We can't find
+   that resident." (no `field`). Seen from the page: an empty form shows "Please type your name." under the name, not the resident
+   error under `#manual-resident`; a named visitor with no resident picked gets the 404 text in `#manual-error`.
+2. **`POST /api/staff/visits` name error uses the visitor's words** (`staff.js` line 58 `MSG.name` = "Please type your name."). API.md
+   for the staff route: `field: "visitor_name"` "Please type their name.".
+   My M2 specs do not assert either message (they would be red against this Worker); `manual.spec` asserts only what M2's list
+   names. vl1 to fix; I add the missing-resident check to `manual.spec` once it is on main.
+
+### Checked and matching (what my pages rely on)
+- Errors: `{ error, code, field? }` from `ApiError.extra`; wrong PIN 401 `field: "pin"` "That PIN is not right."; no/expired token 401
+  "Please sign in again."; staff token on `/api/settings*` 403 "Only a manager can change the settings." (role checked before the route
+  is matched, so it holds for every settings path).
+- `GET /api/info`: `sample` boolean, `retention_days`, `today`, `date_label`, `time_label`.
+- `GET /api/staff/building`: every active unit in order with `count: 0` when empty; `visits` oldest first; `total` = sum; unit `notices`
+  = whole home + own (the page now shows `unit: null` ones once above the cards); `auto_today` today's auto sign-outs newest first;
+  `roll_call: null` always in M1.
+- `StaffVisit`: `visitor_phone` is `""` for no phone (not null); `signed_in_by` null for QR, the staff name for staff; `screened`,
+  `overdue` booleans; `out_label`/`out_kind` null while in; `due_label` always a label.
+- `GET /api/staff/residents`: `screening_enabled`, units with `restricted`, active residents by first name with `by_arrangement`.
+- `POST /api/staff/visits`: `warnings` `[{ code, message }]` in checks 3, 4, 5, 9 order with the visitor messages; a blank or
+  whitespace phone is no phone; `screened !== true` with screening on → 400 `field: "screened"` with the exact message.
+- `POST /api/staff/visits/:id/signout`: 409 `not_in` "That visitor is already signed out." (also for a passed auto sign-out).
+- `GET /api/staff/visits`: bad date 400 `field: "date"` ("Pick a real date."); unknown unit 404; nothing older than retention.
+- `GET /api/settings`: `active` booleans on units, residents, staff; `max_visitors_per_resident` null for no limit; notices newest
+  first with `created_label` "Mon Sep 14, 3:00 PM"; inactive rows included.
+- `PUT /api/settings/home`: digit strings accepted; `max_visitors_per_resident` `null` or `""` = no limit; retention message exact;
+  `phone: ""` allowed.
+- `PUT /api/settings/screening`: `enabled` must be a boolean (the page sends one); questions checked before the stop message, so the
+  switch-on-no-questions Save shows "Add at least one question before you turn screening on." under the questions; an `id` that
+  exists is kept.
+- Notices: `unit_id` `null`/`""` = whole home, unknown unit 404 (no field; the page shows it in `#notice-error`); `active` must be a
+  boolean on PUT; DELETE answers `{ settings }`.
+- The 24:00 window (`hours.js`): `"24:00"` is the only hour 24; close `00:00` is refused (close ≥ 00:01), so the page's rule "a time input
+  of 00:00 in To is sent as 24:00" is needed and matches; `hoursLabel` reads "midnight"; `autoOutAt`/`openNow` treat 24:00 as the next
+  midnight. Unit writes are M2, so this is read, not exercised.
+- `GET /api/visitor/start` (the manual tab's question texts): `questions` only while screening is on.
+
+### What M1 answers 404 (M2 work) and how the pages behave until then
+Roll call (`/api/staff/rollcall*`), contacts JSON and CSV, and settings units / residents / staff writes are not routed: after the role
+check and maintenance the Worker answers 404 `not_found` "There is nothing here.". The pages show that text as is: the Roll call tab in
+`#load-error` (every 3 s poll), Show and Download CSV under the contact form, Save / Put back / Turn off on Units, Residents and Staff
+in the form or the row. Nothing breaks; those specs wait for M3.

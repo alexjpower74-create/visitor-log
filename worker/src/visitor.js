@@ -26,7 +26,11 @@ export async function visitorStart(c) {
   return json({
     home_name: w.home.home_name, sample: w.home.sample, phone: w.home.phone, retention_days: w.home.retention_days, today: c.today,
     date_label: dateLabel(c.today), time_label: timeLabel(c.now), home_notices: homeNoticesOf(w.notices).map((n) => noticeView(n, w)),
-    screening: { enabled: w.home.screening_enabled, questions: w.home.screening_enabled ? w.questions : [] },
+    // The stop message comes with the questions so a "Yes" can stop the sign-in on the phone without sending anything.
+    screening: {
+      enabled: w.home.screening_enabled, questions: w.home.screening_enabled ? w.questions : [],
+      stop_message: w.home.screening_enabled ? w.home.screening_stop_message : '',
+    },
   })
 }
 

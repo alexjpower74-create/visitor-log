@@ -3,7 +3,7 @@
 import { test, expect } from '@playwright/test'
 import {
   at, fresh, setNow, tap, keypad, staffToken, managerToken, buildingViaApi, visitorSignInViaApi, addNoticeViaApi, sevColour, SEV_RGB,
-  assertNoThirdParty,
+  api, bearer, assertNoThirdParty,
 } from '../helpers.mjs'
 import { staffSignsIn, totalNumber, visitor, signInVisitors, visitIds } from './staff-helpers.mjs'
 
@@ -171,5 +171,77 @@ test('a poll that lands while a confirmation is open does not close it', async (
   await tap(page, row.locator('button.confirm-sign-out'), 'Yes, sign out after the poll')
   await expect(row).toHaveCount(0, { timeout: 2000 })
   await expect(totalNumber(page)).toHaveText('1', { timeout: 2000 })
+  assertNoThirdParty(context)
+})
+
+test('a closed unit with a visitor still in shows "Unit closed" and no Open pill, and signing that visitor out removes the card', async ({ page, context, request }) => {
+  await fresh(context, request)
+  await visitorSignInViaApi(request, NORA)
+  const m = bearer(await managerToken(request))
+  for (const [path, body] of [['/api/settings/residents/r_agnes', { active: false }], ['/api/settings/residents/r_bill', { active: false }], ['/api/settings/units/u_cove', { active: false }]]) {
+    const r = await api(request, 'PUT', path, body, m)
+    expect(r.status, `PUT ${path}: ${JSON.stringify(r.body)}`).toBe(200)
+  }
+  const token = await staffToken(request)
+  const b = await buildingViaApi(request, token)
+  expect(b.units.map((u) => [u.id, u.active, u.count]), 'the API lists closed Cove after the open units, with its visitor').toEqual([['u_harbour', true, 0], ['u_lighthouse', true, 0], ['u_cove', false, 1]])
+
+  await staffSignsIn(page)
+  const card = page.locator('[data-unit="u_cove"]')
+  await expect(card.locator('.unit-closed-pill'), 'a closed unit is marked Unit closed').toBeVisible()
+  await expect(card.locator('.unit-closed-pill')).toHaveText('Unit closed')
+  await expect(card).toHaveAttribute('data-unit-active', 'false')
+  await expect(card.locator('.open-pill')).toBeHidden()
+  await expect(card.locator('.unit-hours'), 'no visiting hours on a closed unit').toBeHidden()
+  expect(await card.innerText(), 'no "Open" anywhere on a closed unit').not.toMatch(/\bOpen\b/)
+  expect(await page.locator('[data-unit]').evaluateAll((cs) => cs.map((c) => c.dataset.unit)), 'the closed unit comes after the open ones').toEqual(['u_harbour', 'u_lighthouse', 'u_cove'])
+  await expect(card.locator('.unit-count')).toHaveText('1')
+  await expect(totalNumber(page)).toHaveText(String(b.total))
+
+  const row = card.locator('[data-visit]')
+  await expect(row).toHaveCount(1)
+  await tap(page, row.locator('button.sign-out-visit'), 'Sign out Nora')
+  await tap(page, row.locator('button.confirm-sign-out'), 'Yes, sign out')
+  await expect(card, 'the closed unit leaves once nobody is in').toHaveCount(0, { timeout: 7000 })
+  await expect(totalNumber(page)).toHaveText(String(b.total - 1))
+  expect((await buildingViaApi(request, token)).units.map((u) => u.id)).toEqual(['u_harbour', 'u_lighthouse'])
+  assertNoThirdParty(context)
+})
+
+test('before the first building answer the total shows no number, then the API total', async ({ page, context, request }) => {
+  await fresh(context, request)
+  await signInVisitors(request, [LINDA, PAUL])
+  const apiTotal = (await buildingViaApi(request, await staffToken(request))).total
+  let arrived
+  const hit = new Promise((resolve) => { arrived = resolve })
+  let release
+  const held = new Promise((resolve) => { release = resolve })
+  let first = true
+  await page.route('**/api/staff/building', async (route) => {
+    if (first) { first = false; arrived(); await held }
+    await route.continue()
+  })
+  await staffSignsIn(page)
+  await hit
+  await expect(page.locator('#building-total')).toBeVisible()
+  expect(await page.locator('#building-total').textContent(), 'no number before the first answer').not.toMatch(/\d/)
+  release()
+  await expect(totalNumber(page)).toHaveText(String(apiTotal))
+  assertNoThirdParty(context)
+})
+
+test('when the first building answer fails, the page shows the error and no number until a poll answers', async ({ page, context, request }) => {
+  await fresh(context, request)
+  await signInVisitors(request, [LINDA])
+  let first = true
+  await page.route('**/api/staff/building', (route) => {
+    if (first) { first = false; return route.abort() }
+    return route.continue()
+  })
+  await staffSignsIn(page)
+  await expect(page.locator('#load-error')).toHaveText("Can't reach the visitor log. Check the connection and try again.")
+  expect(await page.locator('#building-total').textContent(), 'no number after a failed first answer').not.toMatch(/\d/)
+  await expect(totalNumber(page), 'the next poll brings the count').toHaveText('1', { timeout: 8000 })
+  await expect(page.locator('#load-error')).toHaveText('')
   assertNoThirdParty(context)
 })

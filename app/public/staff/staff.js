@@ -31,6 +31,9 @@ async function loadInfo() {
 // ---------- sign in / out ----------
 function showKeypad(message) {
   stopPolling()
+  // Never keep a number from before: until the next answer the total shows no count.
+  building = null
+  $('#building-total').replaceChildren(h('span', { class: 'total-number' }, '…'), ' in the building')
   $('#app').hidden = true
   $('#who-line').hidden = true
   const root = $('#signin')
@@ -229,6 +232,8 @@ function updateCard(card, u) {
   card.dataset.unitActive = unitClosed ? 'false' : 'true'
   card.querySelector('.unit-closed-pill').hidden = !unitClosed
   card.querySelector('.unit-closed-note').hidden = !unitClosed
+  card.querySelector('.open-pill').hidden = unitClosed // a closed unit never reads "Open"
+  card.querySelector('.unit-hours').hidden = unitClosed // nor "Open all day"
   const hours = card.querySelector('.unit-hours')
   if (hours.dataset.label !== u.hours_label) {
     hours.replaceChildren(...timeText(u.hours_label))
@@ -569,6 +574,9 @@ $('#contacts-form').addEventListener('submit', async (e) => {
       h('td', {}, r.visitor_phone || '—'), h('td', {}, r.in_label), h('td', {}, r.out_label || ''), h('td', {}, r.signed_out), h('td', {}, r.signed_in_by)))
       : [h('tr', { class: 'empty-row' }, h('td', { colspan: 10 }, 'No visits in these dates.'))]))
   } catch (err) {
+    // A refused Show leaves nothing from an earlier query under the new dates.
+    $('#contacts-count').textContent = ''
+    $('#contacts-table tbody').replaceChildren(h('tr', { class: 'empty-row' }, h('td', { colspan: 10 }, 'No list for these dates.')))
     showError(form, err, $('#contacts-error'))
   }
 })

@@ -60,3 +60,7 @@ worktree's `git status`, restores that log, and reports `rig qa`'s own exit code
 - vl1 found the lead's across-midnight counts in PLAN.md were wrong (2 at 8:59 PM, 1 at 9:00 PM, not 3 and 2); PLAN.md fixed, the rule
   unchanged. API.md gained the `created_label` format, form-value numbers, `""` for the whole home / no limit, and the staff sign-in
   check order (508c11a).
+- vl1's M2 found that closing a unit would drop a visitor who is still in from the building view and the fire-drill total. Decided:
+  the building view also lists a closed unit that still has visitors in, with `active` on each unit (DECISIONS #18). The same commit
+  made vl1's calls contract where API.md was silent: bad contact-list dates on `from`/`to`, a closed or unknown unit on `unit_id`,
+  staff name and role fields, the last-manager guard on a role change, a unit keeping its own name when edited (ead4387).

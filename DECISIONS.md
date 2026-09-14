@@ -42,3 +42,8 @@ Newest at the bottom.
     because many visitors are older and standing in a doorway.
 15. **The door sign's QR code is made on the page** from the home's own address with qrcode-generator (MIT, vendored), so nothing
     is fetched from another host. Tests decode the rendered QR with jsQR to prove it opens the sign-in page.
+16. **One staff session for the staff pages and the settings** (vl2's question, 17:55). A desk tablet is shared, so a manager who
+    signs in on Settings is also signed in on the staff pages, and a staff PIN typed on Settings shows "Only a manager can change
+    the settings." The page keeps the signed-in name from the sign-in answer; there is no `/api/me` route.
+17. **A staff sign-in with no resident picked is a 400 on `resident_id`**, checked before the name and the phone, so the error
+    lands under the first field a person would fix (vl2's question, added to API.md).

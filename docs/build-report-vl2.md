@@ -286,3 +286,83 @@ assertions. New:
 ### Left undone / for the lead
 - The closed-unit spec waits for vl1's M3 and the lead's prompt.
 - The WebKit `window.scrollBy` in the sticky-header test stays the recorded exception.
+
+## M4 — vl1's four findings fixed, and a review of vl1's visitor pages (DONE, 2026-09-14)
+
+Rebased on main (1ad8073, with vl1's closed-unit building answer 14afc3c and its hands-on review of my M2 pages).
+
+### The four fixes, each with a spec on the real Worker and a control proved red
+1. **A closed unit never reads "Open".** While a unit's `active` is false the card shows the "Unit closed" pill and a line saying the
+   visitors are still signed in; the Open/Closed pill **and the hours line are hidden** (the retaken shot showed "Open all day" still on a
+   closed Lighthouse wing, the same confusion, so the hours line went too). Rows and Sign out stay. Spec (`building.spec`): Nora in on
+   Cove, Agnes and Bill removed and Cove closed via the API → the API lists Cove last with `active: false`; the card shows "Unit closed",
+   the Open pill and hours are hidden, the card's text has no "Open", it comes after Harbour and Lighthouse, count 1, `#building-total` =
+   the API; Sign out by taps → the card leaves and the API lists two units.
+2. **No number before the first answer.** `#building-total` starts as "… in the building" (page text, and again whenever the keypad
+   shows after a sign-out). Specs: the first `GET /api/staff/building` held with `page.route` → no digit in `#building-total`, released → the
+   API's total; the first answer aborted → "Can't reach the visitor log. Check the connection and try again." in `#load-error`, still no
+   digit, and the next poll brings the count and clears the error.
+3. **A refused Show clears the list.** On a refused Show the table becomes "No list for these dates." and `#contacts-count` is empty.
+   Spec (`log-contacts.spec`): Sep 13–14 → 4 rows, "4 visits"; From Sep 14, To Sep 13, Show → 400 `to` "The end date is before the start
+   date." under To, no rows, no count.
+4. **The staff name is whole at 390.** At ≤ 600 px the name has its own short line (13 px) under the home name, then the time and the
+   44 px buttons; the header stays opaque and ≤ 96 px. Spec (`targets.spec`, every project): on `/staff/` and `/settings/` "Donna R.
+   (SAMPLE)" is not cut (scrollWidth ≤ clientWidth), ends on screen, the header ≤ 96 px and `rgb(11, 16, 32)`, SAMPLE visible, header
+   buttons ≥ 44 px and hit-tested, no sideways scroll. Retaken shots looked at: the name on its own line, "(SAMPLE)" readable.
+
+### Numbers
+- **Specs: 180 passed, 0 failed, 0 skipped** — 45 tests × chromium-390, chromium-tablet, webkit-390, webkit-tablet, 8.6 min
+  (`E2E_PORT=8403 npx playwright test tests/staff`), run after the last page change.
+- **Negative controls: 15 of 15 RED as intended** (`node tests/staff/negative-all.mjs`, port 8407); the eleven from M2/M3 went red again on
+  the same assertions. New:
+
+| control | break (in the copy) | test that went red | red output |
+|---|---|---|---|
+| closed-ignores-active | `const unitClosed = false` | building: a closed unit with a visitor still in… | `Error: a closed unit is marked Unit closed` locator `.unit-closed-pill` Expected visible, Received hidden |
+| total-starts-at-zero | "0" in the page text **and** in the keypad reset | building: before the first building answer… | `Error: no number before the first answer` Expected pattern not /\d/, Received "0 in the building" |
+| contacts-keeps-rows | the refused Show no longer clears table and count | log-contacts: a refused Show clears… | `Error: no rows stay after a refused Show` Expected 0, Received 4 |
+| name-cut | the M3 phone header rules back (name shares the line, ellipsis) | targets: the staff name shows whole… (chromium-390) | `Error: staff: the staff name is not cut` Expected false, Received true |
+
+- **A control that did not go red, recorded:** the first `total-starts-at-zero` put "0" back only in `staff/index.html`. The test stayed
+  green (`RESULT: NOT RED — the check measured nothing`, in the log) because the keypad screen's reset already wrote "…" before sign-in,
+  so the copy never showed 0. The page was right; the control broke the wrong place. It now breaks both places and went red.
+
+### Review of vl1's visitor pages (read only, main at 1ad8073)
+**How.** A throwaway script inside my worktree (`app/tests/staff/.review-visitor.mjs`, deleted after, never committed) started the real
+Worker on 8401 through the lead's `start-worker.mjs` (`TEST_MODE=1`), reset the SAMPLE home, and drove `/`, `/out/?t=` and `/privacy/` on a
+390 phone in chromium and webkit with real touch taps (hit-tested with `elementFromPoint`) and typed text. Notices and screening were set
+through the API. Screenshots of every step went to a git-ignored folder, and I looked at them in both engines. The server was stopped.
+
+**86 of 86 checks passed (43 per engine), the same in both engines:**
+- **Step 1.** Header home name + SAMPLE; no aurora; labels "Your name" and "Your phone number" (`type="tel"`); "The home keeps your name
+  and phone number for 30 days. Privacy", with `#privacy-link` to `/privacy/`. Continue with nothing typed → "Please type your name."
+  right under the name field.
+- **Step 2.** "Who are you visiting?", label "First name or room number", the under-2 hint, Back shows; "ma" → Margaret L. and Mary S.
+  with "Room 101 · Harbour wing"; "zz" → "No one matches. Check the spelling, or ask at the nurse's desk.".
+- **Refusals and notices.**
+  - Ellen → `#blocked` (`role="alert"`) with the by-arrangement words, Pick someone else, no Sign in.
+  - An outbreak on Cove → Agnes shows it, "I have read it", Sign in disabled until it is pressed (`aria-pressed` true).
+  - Back, Frank → no outbreak notice anywhere and Sign in enabled.
+- **Screening.** Yes → `#stop` with the stop message, Sign in hidden, no `POST /api/visitor/signin` sent; "I tapped Yes by mistake", No,
+  Sign in → signed in.
+- **Signed in.** `/out/?t=`, "Signed in", "3:00 PM", "Visiting Frank O. (SAMPLE), Room 201, Lighthouse wing", the keep line; Sign out full
+  width and 64 px; opening `/` again shows the signed-in screen.
+- **Signed out.** "Signed out", "Signed out at 3:00 PM.", "Thank you for visiting.", Sign in again. Back at `/` the name and phone are
+  remembered; "Not you?" clears them and they stay clear after a reload.
+- **Links and privacy.** An unknown token → `#link-error` with the API's words, a Sign in link, nothing about a visit; the old link of a
+  signed-out visit shows the signed-out sentence. `/privacy/` has every PLAN heading and sentence, with "30 days, then it is deleted
+  automatically.", "Staff at SAMPLE Harbourview Care Home (demo). This app does not send it anywhere." and "Questions: call 709-555-0142.";
+  SAMPLE shows.
+- **On every step:** every button ≥ 56 px, and hit-testing to itself; no sideways scroll at 390.
+
+**Finding (from reading `visit/sign-in.js`, not driven):** after a screening "Yes", tapping "No" on the same question instead of "I tapped
+Yes by mistake" leaves the stop box open. `answer()` only repaints and refreshes Sign in and never hides `#stop` or shows `#sign-in`. The
+page then shows "No" pressed, the stop message, and no Sign in. Steps: screening on with one question; pick Frank; tap Yes; tap No. It is
+safe (nothing is sent), but the words and the buttons disagree. Hiding `#stop` when every answer is "No" would match them. For vl1 to
+decide; I did not edit vl1's files.
+
+No other defect a person would hit. The screenshots read as PLAN's Design: a solid ground, large type, 56 px buttons, the notice card
+with its 6 px severity edge, a dashed disabled Sign in, and the green check on Signed in.
+
+### Left undone
+- Nothing for vl2 in M4. The WebKit `window.scrollBy` in the sticky-header test stays the recorded exception.

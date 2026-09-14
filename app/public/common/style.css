@@ -297,14 +297,15 @@ td .kind { color: var(--muted); font-size: 13px; margin-left: 4px; }
    row that scrolls sideways inside itself. The page never scrolls sideways. */
 @media (max-width: 600px) {
   .wrap { padding: 12px 14px 48px; }
-  .app-header .inner { padding: 5px 14px; gap: 3px; flex-direction: column; flex-wrap: nowrap; align-items: stretch; }
+  .app-header .inner { padding: 4px 14px; gap: 2px; flex-direction: column; flex-wrap: nowrap; align-items: stretch; }
   .home-line { flex-wrap: nowrap; }
   .home-name { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
   .home-line .sample-badge { flex: none; }
-  .who-line { margin-left: 0; gap: 8px; flex-wrap: nowrap; min-width: 0; }
-  .who-line .clock { font-size: 14px; flex: none; }
+  .who-line { margin-left: 0; gap: 2px 8px; flex-wrap: wrap; min-width: 0; }
+  .who-line .clock { font-size: 14px; flex: none; margin-right: auto; }
   .clock-date { display: none; }
-  .who-line .who { flex: 1 1 auto; min-width: 0; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* The staff name gets its own short line, so "(SAMPLE)" on it is never cut. */
+  .who-line .who { order: -1; flex: 0 0 100%; font-size: 13px; line-height: 16px; }
   .who-line button, .who-line .button { flex: none; padding: 0 12px; font-size: 15px; }
   [role="tablist"] {
     flex-wrap: nowrap;

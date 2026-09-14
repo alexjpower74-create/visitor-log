@@ -271,3 +271,414 @@ run: npx playwright test tests/staff/targets.spec.mjs --project chromium-390 --g
     .negative/time-wraps/results/staff-targets-hours-labels-keep-each-time-on-one-line-chromium-390/test-failed-1.png
   1 failed
 RESULT: RED as intended
+
+=== staff negative:closed-ignores-active — 2026-09-14T21:47:51.391Z
+break: the copy ignores a unit's active flag, so a closed unit gets no Unit closed pill and keeps its Open pill
+patched: app/public/staff/staff.js
+run: npx playwright test tests/staff/building.spec.mjs --project chromium-tablet --grep "a closed unit with a visitor still in shows "Unit closed" and no Open pill, and signing that visitor out removes the card" (E2E_PORT 8407, E2E_WORKER_DIR app/.negative/closed-ignores-active/worker)
+  ✘  1 [chromium-tablet] › tests/staff/building.spec.mjs:177:1 › a closed unit with a visitor still in shows "Unit closed" and no Open pill, and signing that visitor out removes the card (9.2s)
+    Error: a closed unit is marked Unit closed
+    expect(locator).toBeVisible() failed
+    Locator:  locator('[data-unit="u_cove"]').locator('.unit-closed-pill')
+    Expected: visible
+    Received: hidden
+           - unexpected value "hidden"
+    .negative/closed-ignores-active/results/staff-building-a-closed-un-bcdd4-isitor-out-removes-the-card-chromium-tablet/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== staff negative:contacts-keeps-rows — 2026-09-14T21:48:04.634Z
+break: the copy's refused Show leaves the earlier table and count on screen
+patched: app/public/staff/staff.js
+run: npx playwright test tests/staff/log-contacts.spec.mjs --project chromium-tablet --grep "a refused Show clears the earlier table and count" (E2E_PORT 8407, E2E_WORKER_DIR app/.negative/contacts-keeps-rows/worker)
+  ✘  1 [chromium-tablet] › tests/staff/log-contacts.spec.mjs:100:1 › a refused Show clears the earlier table and count (9.4s)
+    Error: no rows stay after a refused Show
+    expect(locator).toHaveCount(expected) failed
+    Locator:  locator('#contacts-table tbody [data-contact-row]')
+    Expected: 0
+    Received: 4
+           - unexpected value "4"
+      119 |   expect(body).toMatchObject({ field: 'to', error: 'The end date is before the start date.' })
+    .negative/contacts-keeps-rows/results/staff-log-contacts-a-refus-678c1-the-earlier-table-and-count-chromium-tablet/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== staff negative:csv-stale-unit — 2026-09-14T21:48:18.136Z
+break: the copy's Download CSV always asks for all units, whatever the unit picker says
+patched: app/public/staff/staff.js
+run: npx playwright test tests/staff/log-contacts.spec.mjs --project chromium-tablet --grep "the contact list for Sep 13 to 14 on Harbour wing shows the API's count, and Download CSV saves the API's exact bytes and filename" (E2E_PORT 8407, E2E_WORKER_DIR app/.negative/csv-stale-unit/worker)
+  ✘  1 [chromium-tablet] › tests/staff/log-contacts.spec.mjs:67:1 › the contact list for Sep 13 to 14 on Harbour wing shows the API's count, and Download CSV saves the API's exact bytes and filename (1.5s)
+    Error: the downloaded CSV is byte for byte the API's
+    expect(received).toBe(expected) // Object.is equality
+    Expected: true
+    Received: false
+    .negative/csv-stale-unit/results/staff-log-contacts-the-con-a92f3--s-exact-bytes-and-filename-chromium-tablet/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== staff negative:example-saves — 2026-09-14T21:48:23.675Z
+break: the copy's Use the example also submits the screening form (saves)
+patched: app/public/settings/settings.js
+run: npx playwright test tests/staff/settings-m1.spec.mjs --project chromium-tablet --grep "Use the example fills the form but saves nothing and leaves the switch off" (E2E_PORT 8407, E2E_WORKER_DIR app/.negative/example-saves/worker)
+  ✘  1 [chromium-tablet] › tests/staff/settings-m1.spec.mjs:122:1 › Use the example fills the form but saves nothing and leaves the switch off (1.4s)
+    Error: Use the example sent a save
+    expect(received).toBeNull()
+    Received: {"_guid": "request@a17897867e960fba583581ee38e5e5fd", "_type": "Request"}
+    .negative/example-saves/results/staff-settings-m1-Use-the--5ad7f-g-and-leaves-the-switch-off-chromium-tablet/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== staff negative:header-see-through — 2026-09-14T21:48:29.153Z
+break: the copy puts back the M1b translucent header background rgba(11, 16, 32, 0.78)
+patched: app/public/common/style.css
+run: npx playwright test tests/staff/targets.spec.mjs --project chromium-390 --grep "the sticky header is opaque and a Sign out scrolled under it can still be tapped" (E2E_PORT 8407, E2E_WORKER_DIR app/.negative/header-see-through/worker)
+  ✘  1 [chromium-390] › tests/staff/targets.spec.mjs:143:1 › the sticky header is opaque and a Sign out scrolled under it can still be tapped (1.8s)
+    Error: the sticky header is opaque (background alpha 1), so nothing reads through it
+    expect(received).toBe(expected) // Object.is equality
+    Expected: 1
+    Received: 0.78
+    .negative/header-see-through/results/staff-targets-the-sticky-h-4f982-nder-it-can-still-be-tapped-chromium-390/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== staff negative:local-tick — 2026-09-14T21:48:34.978Z
+break: the copy's Found button marks the row on this page only and sends no request
+patched: app/public/staff/staff.js
+run: npx playwright test tests/staff/rollcall.spec.mjs --project chromium-tablet --grep "a roll call started by real taps on the desk takes ticks from a second phone within one poll, lists a late arrival, and refuses ticks once ended" (E2E_PORT 8407, E2E_WORKER_DIR app/.negative/local-tick/worker)
+  ✘  1 [chromium-tablet] › tests/staff/rollcall.spec.mjs:16:1 › a roll call started by real taps on the desk takes ticks from a second phone within one poll, lists a late arrival, and refuses ticks once ended (7.0s)
+    Error: the second phone's tick reaches the desk within one poll
+    expect(locator).toHaveText(expected) failed
+    Locator:  locator('#roll-call-progress')
+    Expected: "1 of 3 found"
+    Received: "0 of 3 found"
+           - unexpected value "0 of 3 found"
+    .negative/local-tick/results/staff-rollcall-a-roll-call-8f03a-nd-refuses-ticks-once-ended-chromium-tablet/test-failed-1.png
+    .negative/local-tick/results/staff-rollcall-a-roll-call-8f03a-nd-refuses-ticks-once-ended-chromium-tablet/test-failed-2.png
+  1 failed
+RESULT: RED as intended
+
+=== staff negative:name-cut — 2026-09-14T21:48:46.101Z
+break: the copy puts back the M3 phone header, where the staff name shares the line and is cut with an ellipsis
+patched: app/public/common/style.css, app/public/common/style.css
+run: npx playwright test tests/staff/targets.spec.mjs --project chromium-390 --grep "the staff name shows whole, "(SAMPLE)" included, and the header stays at most 96 px" (E2E_PORT 8407, E2E_WORKER_DIR app/.negative/name-cut/worker)
+  ✘  1 [chromium-390] › tests/staff/targets.spec.mjs:223:1 › the staff name shows whole, "(SAMPLE)" included, and the header stays at most 96 px (1.2s)
+    Error: staff: the staff name is not cut
+    expect(received).toBe(expected) // Object.is equality
+    Expected: false
+    Received: true
+    .negative/name-cut/results/staff-targets-the-staff-na-cdcc0--header-stays-at-most-96-px-chromium-390/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== staff negative:no-overdue — 2026-09-14T21:48:51.404Z
+break: the copy ignores overdue: every row is data-overdue=false and no Overdue chip is drawn
+patched: app/public/staff/staff.js, app/public/staff/staff.js
+run: npx playwright test tests/staff/building.spec.mjs --project chromium-tablet --grep "a Harbour visitor in at 11:00 AM is overdue within one poll of 11:30 AM" (E2E_PORT 8407, E2E_WORKER_DIR app/.negative/no-overdue/worker)
+  ✘  1 [chromium-tablet] › tests/staff/building.spec.mjs:97:1 › a Harbour visitor in at 11:00 AM is overdue within one poll of 11:30 AM (8.0s)
+    Error: overdue within one 5 s poll
+    expect(locator).toHaveAttribute(expected) failed
+    Locator:  locator('[data-unit="u_harbour"] [data-visit]')
+    Expected: "true"
+    Received: "false"
+           - unexpected value "false"
+          - unexpected value "false"
+    .negative/no-overdue/results/staff-building-a-Harbour-v-b6a58-within-one-poll-of-11-30-AM-chromium-tablet/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== staff negative:notice-unit — 2026-09-14T21:49:03.492Z
+break: the copy's notice form sends the first unit when Whole home is picked
+patched: app/public/settings/settings.js
+run: npx playwright test tests/staff/settings-m1.spec.mjs --project chromium-tablet --grep "a Whole home notice goes to home_notices for every visitor" (E2E_PORT 8407, E2E_WORKER_DIR app/.negative/notice-unit/worker)
+  ✘  1 [chromium-tablet] › tests/staff/settings-m1.spec.mjs:65:1 › a Whole home notice goes to home_notices for every visitor (1.3s)
+    Error: a Whole home notice reaches every visitor
+    expect(received).toEqual(expected) // deep equality
+    - Expected  - 3
+    + Received  + 1
+    .negative/notice-unit/results/staff-settings-m1-a-Whole--e8aa2-e-notices-for-every-visitor-chromium-tablet/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== staff negative:overlay — 2026-09-14T21:49:08.902Z
+break: the copy lays a transparent cover over every visit row, Sign out included
+patched: app/public/staff/staff.css
+run: npx playwright test tests/staff/building.spec.mjs --project chromium-tablet --grep "Sign out by real taps: the row leaves, the unit count and the total drop at once, and the API agrees" (E2E_PORT 8407, E2E_WORKER_DIR app/.negative/overlay/worker)
+  ✘  1 [chromium-tablet] › tests/staff/building.spec.mjs:53:1 › Sign out by real taps: the row leaves, the unit count and the total drop at once, and the API agrees (1.2s)
+    Error: tap(Sign out Paul) hit-test at 925,413: something else is on top
+    expect(received).toBe(expected) // Object.is equality
+    Expected: ""
+    Received: "<article class=\"visit-row\" data-visit=\"v_32b239eb96fcb3a7\" data-overdue=\"false\" data-sig=\"{&quot;id&quot;:&quot;v_32b239eb96fcb3a7&quot;,&quot;visitor_name&quot"
+    >  97 |   expect(await hitTest(locator, x, y), `tap(${label}) hit-test at ${Math.round(x)},${Math.round(y)}: something else is on top`).toBe('')
+    .negative/overlay/results/staff-building-Sign-out-by-f4b5b--at-once-and-the-API-agrees-chromium-tablet/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== staff negative:qr-wrong-path — 2026-09-14T21:49:14.113Z
+break: the copy's door sign QR encodes location.origin + '/staff/'
+patched: app/public/settings/door-sign/door-sign.js
+run: npx playwright test tests/staff/door-sign.spec.mjs --project chromium-tablet --grep "the door sign QR decodes to the sign-in page, with the home name and SAMPLE" (E2E_PORT 8407, E2E_WORKER_DIR app/.negative/qr-wrong-path/worker)
+  ✘  1 [chromium-tablet] › tests/staff/door-sign.spec.mjs:6:1 › the door sign QR decodes to the sign-in page, with the home name and SAMPLE (499ms)
+    Error: the door QR opens the sign-in page
+    expect(received).toBe(expected) // Object.is equality
+    Expected: "http://127.0.0.1:8407/"
+    Received: "http://127.0.0.1:8407/staff/"
+    .negative/qr-wrong-path/results/staff-door-sign-the-door-s-87f7c-th-the-home-name-and-SAMPLE-chromium-tablet/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== staff negative:stacked-buttons — 2026-09-14T21:49:18.628Z
+break: the copy drops the phone rule that gives a list row's words the whole line, so Remove wraps under Change
+patched: app/public/common/style.css
+run: npx playwright test tests/staff/targets.spec.mjs --project chromium-390 --grep "resident rows put Change and Remove side by side" (E2E_PORT 8407, E2E_WORKER_DIR app/.negative/stacked-buttons/worker)
+  ✘  1 [chromium-390] › tests/staff/targets.spec.mjs:205:1 › resident rows put Change and Remove side by side (1.4s)
+    Error: Change and Remove sit side by side
+    expect(received).toBeLessThan(expected)
+    Expected: < 2
+    Received:   67.609375
+    .negative/stacked-buttons/results/staff-targets-resident-row-a004a-nge-and-Remove-side-by-side-chromium-390/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== staff negative:stale-total — 2026-09-14T21:49:24.117Z
+break: the copy renders #building-total once and never again, so a sign-out leaves the old total
+patched: app/public/staff/staff.js
+run: npx playwright test tests/staff/building.spec.mjs --project chromium-tablet --grep "Sign out by real taps: the row leaves, the unit count and the total drop at once, and the API agrees" (E2E_PORT 8407, E2E_WORKER_DIR app/.negative/stale-total/worker)
+  ✘  1 [chromium-tablet] › tests/staff/building.spec.mjs:53:1 › Sign out by real taps: the row leaves, the unit count and the total drop at once, and the API agrees (3.3s)
+    Error: the total drops with the row
+    expect(locator).toHaveText(expected) failed
+    Locator:  locator('#building-total .total-number')
+    Expected: "2"
+    Received: "3"
+           - unexpected value "3"
+    .negative/stale-total/results/staff-building-Sign-out-by-f4b5b--at-once-and-the-API-agrees-chromium-tablet/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== staff negative:time-wraps — 2026-09-14T21:49:31.408Z
+break: the copy drops white-space: nowrap from .time, so a time can break before AM/PM
+patched: app/public/common/style.css
+run: npx playwright test tests/staff/targets.spec.mjs --project chromium-390 --grep "hours labels keep each time on one line" (E2E_PORT 8407, E2E_WORKER_DIR app/.negative/time-wraps/worker)
+  ✘  1 [chromium-390] › tests/staff/targets.spec.mjs:186:1 › hours labels keep each time on one line (1.3s)
+    Error: a time label broke across lines on In the building
+    expect(received).toEqual(expected) // deep equality
+    - Expected  - 1
+    + Received  + 3
+    .negative/time-wraps/results/staff-targets-hours-labels-keep-each-time-on-one-line-chromium-390/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== staff negative:total-starts-at-zero — 2026-09-14T21:49:36.714Z
+break: the copy ships "0 in the building" as the starting text again
+patched: app/public/staff/index.html
+run: npx playwright test tests/staff/building.spec.mjs --project chromium-tablet --grep "before the first building answer the total shows no number, then the API total" (E2E_PORT 8407, E2E_WORKER_DIR app/.negative/total-starts-at-zero/worker)
+  ✓  1 [chromium-tablet] › tests/staff/building.spec.mjs:210:1 › before the first building answer the total shows no number, then the API total (1.0s)
+  1 passed (4.4s)
+RESULT: NOT RED — the check measured nothing (exit 0; named test failed: false; missing: no number before the first answer)
+
+=== staff negative:closed-ignores-active — 2026-09-14T22:00:54.664Z
+break: the copy ignores a unit's active flag, so a closed unit gets no Unit closed pill and keeps its Open pill
+patched: app/public/staff/staff.js
+run: npx playwright test tests/staff/building.spec.mjs --project chromium-tablet --grep "a closed unit with a visitor still in shows "Unit closed" and no Open pill, and signing that visitor out removes the card" (E2E_PORT 8407, E2E_WORKER_DIR app/.negative/closed-ignores-active/worker)
+  ✘  1 [chromium-tablet] › tests/staff/building.spec.mjs:177:1 › a closed unit with a visitor still in shows "Unit closed" and no Open pill, and signing that visitor out removes the card (9.3s)
+    Error: a closed unit is marked Unit closed
+    expect(locator).toBeVisible() failed
+    Locator:  locator('[data-unit="u_cove"]').locator('.unit-closed-pill')
+    Expected: visible
+    Received: hidden
+           - unexpected value "hidden"
+    .negative/closed-ignores-active/results/staff-building-a-closed-un-bcdd4-isitor-out-removes-the-card-chromium-tablet/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== staff negative:contacts-keeps-rows — 2026-09-14T22:01:08.175Z
+break: the copy's refused Show leaves the earlier table and count on screen
+patched: app/public/staff/staff.js
+run: npx playwright test tests/staff/log-contacts.spec.mjs --project chromium-tablet --grep "a refused Show clears the earlier table and count" (E2E_PORT 8407, E2E_WORKER_DIR app/.negative/contacts-keeps-rows/worker)
+  ✘  1 [chromium-tablet] › tests/staff/log-contacts.spec.mjs:100:1 › a refused Show clears the earlier table and count (9.7s)
+    Error: no rows stay after a refused Show
+    expect(locator).toHaveCount(expected) failed
+    Locator:  locator('#contacts-table tbody [data-contact-row]')
+    Expected: 0
+    Received: 4
+           - unexpected value "4"
+      119 |   expect(body).toMatchObject({ field: 'to', error: 'The end date is before the start date.' })
+    .negative/contacts-keeps-rows/results/staff-log-contacts-a-refus-678c1-the-earlier-table-and-count-chromium-tablet/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== staff negative:csv-stale-unit — 2026-09-14T22:01:22.182Z
+break: the copy's Download CSV always asks for all units, whatever the unit picker says
+patched: app/public/staff/staff.js
+run: npx playwright test tests/staff/log-contacts.spec.mjs --project chromium-tablet --grep "the contact list for Sep 13 to 14 on Harbour wing shows the API's count, and Download CSV saves the API's exact bytes and filename" (E2E_PORT 8407, E2E_WORKER_DIR app/.negative/csv-stale-unit/worker)
+  ✘  1 [chromium-tablet] › tests/staff/log-contacts.spec.mjs:67:1 › the contact list for Sep 13 to 14 on Harbour wing shows the API's count, and Download CSV saves the API's exact bytes and filename (1.7s)
+    Error: the downloaded CSV is byte for byte the API's
+    expect(received).toBe(expected) // Object.is equality
+    Expected: true
+    Received: false
+    .negative/csv-stale-unit/results/staff-log-contacts-the-con-a92f3--s-exact-bytes-and-filename-chromium-tablet/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== staff negative:example-saves — 2026-09-14T22:01:27.981Z
+break: the copy's Use the example also submits the screening form (saves)
+patched: app/public/settings/settings.js
+run: npx playwright test tests/staff/settings-m1.spec.mjs --project chromium-tablet --grep "Use the example fills the form but saves nothing and leaves the switch off" (E2E_PORT 8407, E2E_WORKER_DIR app/.negative/example-saves/worker)
+  ✘  1 [chromium-tablet] › tests/staff/settings-m1.spec.mjs:122:1 › Use the example fills the form but saves nothing and leaves the switch off (1.4s)
+    Error: Use the example sent a save
+    expect(received).toBeNull()
+    Received: {"_guid": "request@8425639bdeef5f5c50fb76fba42e9998", "_type": "Request"}
+    .negative/example-saves/results/staff-settings-m1-Use-the--5ad7f-g-and-leaves-the-switch-off-chromium-tablet/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== staff negative:header-see-through — 2026-09-14T22:01:33.597Z
+break: the copy puts back the M1b translucent header background rgba(11, 16, 32, 0.78)
+patched: app/public/common/style.css
+run: npx playwright test tests/staff/targets.spec.mjs --project chromium-390 --grep "the sticky header is opaque and a Sign out scrolled under it can still be tapped" (E2E_PORT 8407, E2E_WORKER_DIR app/.negative/header-see-through/worker)
+  ✘  1 [chromium-390] › tests/staff/targets.spec.mjs:143:1 › the sticky header is opaque and a Sign out scrolled under it can still be tapped (1.7s)
+    Error: the sticky header is opaque (background alpha 1), so nothing reads through it
+    expect(received).toBe(expected) // Object.is equality
+    Expected: 1
+    Received: 0.78
+    .negative/header-see-through/results/staff-targets-the-sticky-h-4f982-nder-it-can-still-be-tapped-chromium-390/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== staff negative:local-tick — 2026-09-14T22:01:39.379Z
+break: the copy's Found button marks the row on this page only and sends no request
+patched: app/public/staff/staff.js
+run: npx playwright test tests/staff/rollcall.spec.mjs --project chromium-tablet --grep "a roll call started by real taps on the desk takes ticks from a second phone within one poll, lists a late arrival, and refuses ticks once ended" (E2E_PORT 8407, E2E_WORKER_DIR app/.negative/local-tick/worker)
+  ✘  1 [chromium-tablet] › tests/staff/rollcall.spec.mjs:16:1 › a roll call started by real taps on the desk takes ticks from a second phone within one poll, lists a late arrival, and refuses ticks once ended (7.2s)
+    Error: the second phone's tick reaches the desk within one poll
+    expect(locator).toHaveText(expected) failed
+    Locator:  locator('#roll-call-progress')
+    Expected: "1 of 3 found"
+    Received: "0 of 3 found"
+           - unexpected value "0 of 3 found"
+    .negative/local-tick/results/staff-rollcall-a-roll-call-8f03a-nd-refuses-ticks-once-ended-chromium-tablet/test-failed-1.png
+    .negative/local-tick/results/staff-rollcall-a-roll-call-8f03a-nd-refuses-ticks-once-ended-chromium-tablet/test-failed-2.png
+  1 failed
+RESULT: RED as intended
+
+=== staff negative:name-cut — 2026-09-14T22:01:50.731Z
+break: the copy puts back the M3 phone header, where the staff name shares the line and is cut with an ellipsis
+patched: app/public/common/style.css, app/public/common/style.css
+run: npx playwright test tests/staff/targets.spec.mjs --project chromium-390 --grep "the staff name shows whole, "(SAMPLE)" included, and the header stays at most 96 px" (E2E_PORT 8407, E2E_WORKER_DIR app/.negative/name-cut/worker)
+  ✘  1 [chromium-390] › tests/staff/targets.spec.mjs:223:1 › the staff name shows whole, "(SAMPLE)" included, and the header stays at most 96 px (1.4s)
+    Error: staff: the staff name is not cut
+    expect(received).toBe(expected) // Object.is equality
+    Expected: false
+    Received: true
+    .negative/name-cut/results/staff-targets-the-staff-na-cdcc0--header-stays-at-most-96-px-chromium-390/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== staff negative:no-overdue — 2026-09-14T22:01:56.304Z
+break: the copy ignores overdue: every row is data-overdue=false and no Overdue chip is drawn
+patched: app/public/staff/staff.js, app/public/staff/staff.js
+run: npx playwright test tests/staff/building.spec.mjs --project chromium-tablet --grep "a Harbour visitor in at 11:00 AM is overdue within one poll of 11:30 AM" (E2E_PORT 8407, E2E_WORKER_DIR app/.negative/no-overdue/worker)
+  ✘  1 [chromium-tablet] › tests/staff/building.spec.mjs:97:1 › a Harbour visitor in at 11:00 AM is overdue within one poll of 11:30 AM (8.1s)
+    Error: overdue within one 5 s poll
+    expect(locator).toHaveAttribute(expected) failed
+    Locator:  locator('[data-unit="u_harbour"] [data-visit]')
+    Expected: "true"
+    Received: "false"
+           - unexpected value "false"
+          - unexpected value "false"
+    .negative/no-overdue/results/staff-building-a-Harbour-v-b6a58-within-one-poll-of-11-30-AM-chromium-tablet/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== staff negative:notice-unit — 2026-09-14T22:02:08.549Z
+break: the copy's notice form sends the first unit when Whole home is picked
+patched: app/public/settings/settings.js
+run: npx playwright test tests/staff/settings-m1.spec.mjs --project chromium-tablet --grep "a Whole home notice goes to home_notices for every visitor" (E2E_PORT 8407, E2E_WORKER_DIR app/.negative/notice-unit/worker)
+  ✘  1 [chromium-tablet] › tests/staff/settings-m1.spec.mjs:65:1 › a Whole home notice goes to home_notices for every visitor (1.4s)
+    Error: a Whole home notice reaches every visitor
+    expect(received).toEqual(expected) // deep equality
+    - Expected  - 3
+    + Received  + 1
+    .negative/notice-unit/results/staff-settings-m1-a-Whole--e8aa2-e-notices-for-every-visitor-chromium-tablet/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== staff negative:overlay — 2026-09-14T22:02:14.149Z
+break: the copy lays a transparent cover over every visit row, Sign out included
+patched: app/public/staff/staff.css
+run: npx playwright test tests/staff/building.spec.mjs --project chromium-tablet --grep "Sign out by real taps: the row leaves, the unit count and the total drop at once, and the API agrees" (E2E_PORT 8407, E2E_WORKER_DIR app/.negative/overlay/worker)
+  ✘  1 [chromium-tablet] › tests/staff/building.spec.mjs:53:1 › Sign out by real taps: the row leaves, the unit count and the total drop at once, and the API agrees (1.3s)
+    Error: tap(Sign out Paul) hit-test at 925,413: something else is on top
+    expect(received).toBe(expected) // Object.is equality
+    Expected: ""
+    Received: "<article class=\"visit-row\" data-visit=\"v_2c52cb4b25516284\" data-overdue=\"false\" data-sig=\"{&quot;id&quot;:&quot;v_2c52cb4b25516284&quot;,&quot;visitor_name&quot"
+    >  97 |   expect(await hitTest(locator, x, y), `tap(${label}) hit-test at ${Math.round(x)},${Math.round(y)}: something else is on top`).toBe('')
+    .negative/overlay/results/staff-building-Sign-out-by-f4b5b--at-once-and-the-API-agrees-chromium-tablet/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== staff negative:qr-wrong-path — 2026-09-14T22:02:19.529Z
+break: the copy's door sign QR encodes location.origin + '/staff/'
+patched: app/public/settings/door-sign/door-sign.js
+run: npx playwright test tests/staff/door-sign.spec.mjs --project chromium-tablet --grep "the door sign QR decodes to the sign-in page, with the home name and SAMPLE" (E2E_PORT 8407, E2E_WORKER_DIR app/.negative/qr-wrong-path/worker)
+  ✘  1 [chromium-tablet] › tests/staff/door-sign.spec.mjs:6:1 › the door sign QR decodes to the sign-in page, with the home name and SAMPLE (567ms)
+    Error: the door QR opens the sign-in page
+    expect(received).toBe(expected) // Object.is equality
+    Expected: "http://127.0.0.1:8407/"
+    Received: "http://127.0.0.1:8407/staff/"
+    .negative/qr-wrong-path/results/staff-door-sign-the-door-s-87f7c-th-the-home-name-and-SAMPLE-chromium-tablet/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== staff negative:stacked-buttons — 2026-09-14T22:02:24.150Z
+break: the copy drops the phone rule that gives a list row's words the whole line, so Remove wraps under Change
+patched: app/public/common/style.css
+run: npx playwright test tests/staff/targets.spec.mjs --project chromium-390 --grep "resident rows put Change and Remove side by side" (E2E_PORT 8407, E2E_WORKER_DIR app/.negative/stacked-buttons/worker)
+  ✘  1 [chromium-390] › tests/staff/targets.spec.mjs:205:1 › resident rows put Change and Remove side by side (1.6s)
+    Error: Change and Remove sit side by side
+    expect(received).toBeLessThan(expected)
+    Expected: < 2
+    Received:   67.609375
+    .negative/stacked-buttons/results/staff-targets-resident-row-a004a-nge-and-Remove-side-by-side-chromium-390/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== staff negative:stale-total — 2026-09-14T22:02:29.861Z
+break: the copy renders #building-total once and never again, so a sign-out leaves the old total
+patched: app/public/staff/staff.js
+run: npx playwright test tests/staff/building.spec.mjs --project chromium-tablet --grep "Sign out by real taps: the row leaves, the unit count and the total drop at once, and the API agrees" (E2E_PORT 8407, E2E_WORKER_DIR app/.negative/stale-total/worker)
+  ✘  1 [chromium-tablet] › tests/staff/building.spec.mjs:53:1 › Sign out by real taps: the row leaves, the unit count and the total drop at once, and the API agrees (3.4s)
+    Error: the total drops with the row
+    expect(locator).toHaveText(expected) failed
+    Locator:  locator('#building-total .total-number')
+    Expected: "2"
+    Received: "3"
+           - unexpected value "3"
+    .negative/stale-total/results/staff-building-Sign-out-by-f4b5b--at-once-and-the-API-agrees-chromium-tablet/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== staff negative:time-wraps — 2026-09-14T22:02:37.345Z
+break: the copy drops white-space: nowrap from .time, so a time can break before AM/PM
+patched: app/public/common/style.css
+run: npx playwright test tests/staff/targets.spec.mjs --project chromium-390 --grep "hours labels keep each time on one line" (E2E_PORT 8407, E2E_WORKER_DIR app/.negative/time-wraps/worker)
+  ✘  1 [chromium-390] › tests/staff/targets.spec.mjs:186:1 › hours labels keep each time on one line (1.3s)
+    Error: a time label broke across lines on In the building
+    expect(received).toEqual(expected) // deep equality
+    - Expected  - 1
+    + Received  + 3
+    .negative/time-wraps/results/staff-targets-hours-labels-keep-each-time-on-one-line-chromium-390/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== staff negative:total-starts-at-zero — 2026-09-14T22:02:42.780Z
+break: the copy starts the total at 0 again (page text and the keypad reset), as M2 did
+patched: app/public/staff/index.html, app/public/staff/staff.js
+run: npx playwright test tests/staff/building.spec.mjs --project chromium-tablet --grep "before the first building answer the total shows no number, then the API total" (E2E_PORT 8407, E2E_WORKER_DIR app/.negative/total-starts-at-zero/worker)
+  ✘  1 [chromium-tablet] › tests/staff/building.spec.mjs:211:1 › before the first building answer the total shows no number, then the API total (1.0s)
+    Error: no number before the first answer
+    expect(received).not.toMatch(expected)
+    Expected pattern: not /\d/
+    Received string:      "0 in the building"
+    .negative/total-starts-at-zero/results/staff-building-before-the--4ecfd-o-number-then-the-API-total-chromium-tablet/test-failed-1.png
+  1 failed
+RESULT: RED as intended

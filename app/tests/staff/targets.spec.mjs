@@ -219,3 +219,29 @@ test('resident rows put Change and Remove side by side', async ({ page, context,
   await expectTapTarget(page, first.locator('.resident-remove'), 44, 'Remove')
   assertNoThirdParty(context)
 })
+
+test('the staff name shows whole, "(SAMPLE)" included, and the header stays at most 96 px', async ({ page, context, request }) => {
+  await fresh(context, request)
+  await staffSignsIn(page, '7314')
+  for (const where of ['staff', 'settings']) {
+    if (where === 'settings') {
+      await page.goto('/settings/')
+      await expect(page.getByRole('tab', { name: 'Notices', exact: true })).toBeVisible()
+    }
+    const who = page.locator('#who-name')
+    await expect(who).toHaveText('Donna R. (SAMPLE)')
+    const m = await who.evaluate((el) => {
+      const header = document.querySelector('[data-sticky-header]')
+      return { cut: el.scrollWidth > el.clientWidth + 1, right: el.getBoundingClientRect().right, vw: document.documentElement.clientWidth,
+        height: header.getBoundingClientRect().height, bg: getComputedStyle(header).backgroundColor }
+    })
+    expect(m.cut, `${where}: the staff name is not cut`).toBe(false)
+    expect(m.right, `${where}: the staff name ends on screen`).toBeLessThanOrEqual(m.vw)
+    expect(m.height, `${where}: the header is at most 96 px`).toBeLessThanOrEqual(96)
+    expect(m.bg, `${where}: the header is still opaque`).toBe('rgb(11, 16, 32)')
+    await expect(page.locator('.app-header .sample-badge')).toBeVisible()
+    for (const b of await page.locator('.who-line button:visible, .who-line a.button:visible').all()) await expectTapTarget(page, b, 44, `${where} header button`)
+    await expectNoHorizontalScroll(page)
+  }
+  assertNoThirdParty(context)
+})

@@ -2,7 +2,7 @@
 // Everything comes from docs/API.md through common/api.js. Times and dates are the API's labels, never the browser clock.
 // A poll never re-renders a row with an open confirmation, a row under someone's finger or a row holding focus.
 import * as api from '/common/api.js'
-import { h, $, plural, noticeCard, homeLine, mountTabs, clearErrors, showError, confirmBox, poller, addDays, fillSelect } from '/common/ui.js'
+import { h, $, plural, noticeCard, homeLine, paintClock, mountTabs, clearErrors, showError, confirmBox, poller, addDays, fillSelect } from '/common/ui.js'
 import { mountKeypad } from '/common/keypad.js'
 
 const TABS = [
@@ -19,7 +19,7 @@ let tabs = null
 let keypad = null
 let staffLists = null // GET /api/staff/residents
 
-const setClock = (dateLabel, timeLabel) => { $('#clock').textContent = dateLabel && timeLabel ? `${dateLabel} · ${timeLabel}` : '' }
+const setClock = (dateLabel, timeLabel) => paintClock($('#clock'), dateLabel, timeLabel)
 
 async function loadInfo() {
   info = await api.get('/api/info')
@@ -172,6 +172,17 @@ function renderBuilding() {
     banner.textContent = `Roll call going: ${building.roll_call.found} of ${building.roll_call.total} found`
   } else banner.hidden = true
 
+  // Whole-home notices (unit: null) once above the cards; each card shows only its own unit's notices.
+  const homeNotices = []
+  for (const u of building.units) for (const n of u.notices) if (!n.unit && !homeNotices.some((x) => x.id === n.id)) homeNotices.push(n)
+  const homeBox = $('#building-notices')
+  const homeSig = sig(homeNotices)
+  if (homeBox.dataset.sig !== homeSig) {
+    homeBox.replaceChildren(...homeNotices.map((n) => noticeCard(n)))
+    homeBox.dataset.sig = homeSig
+  }
+  homeBox.hidden = homeNotices.length === 0
+
   const grid = $('#units')
   buildingHeld = false
   reconcileCards(grid, building.units)
@@ -216,10 +227,11 @@ function updateCard(card, u) {
   pill.textContent = u.open_now ? 'Open' : 'Closed'
   pill.className = `pill open-pill ${u.open_now ? 'open' : 'closed'}`
   card.querySelector('.unit-count').textContent = String(u.count)
-  const noticeSig = sig(u.notices)
+  const own = u.notices.filter((n) => n.unit && n.unit.id === u.id)
+  const noticeSig = sig(own)
   const notices = card.querySelector('.unit-notices')
   if (notices.dataset.sig !== noticeSig) {
-    notices.replaceChildren(...u.notices.map((n) => noticeCard(n, { compact: true })))
+    notices.replaceChildren(...own.map((n) => noticeCard(n, { compact: true })))
     notices.dataset.sig = noticeSig
   }
   const list = card.querySelector('.visits')

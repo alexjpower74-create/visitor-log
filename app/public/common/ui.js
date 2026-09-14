@@ -38,6 +38,23 @@ export function homeLine(info) {
     h('span', { class: 'sample-badge', hidden: !info?.sample }, 'SAMPLE'))
 }
 
+/** The header clock from the API's labels. The date part hides on a phone so the header stays on two short lines. */
+export function paintClock(el, dateLabel, timeLabel) {
+  if (!dateLabel || !timeLabel) { el.replaceChildren(); return }
+  el.replaceChildren(h('span', { class: 'clock-date' }, `${dateLabel} · `), h('span', { class: 'clock-time' }, timeLabel))
+}
+
+const openSections = new Set()
+/** A collapsed list under a list (closed units, removed residents, staff turned off). Remembers being open across re-renders. */
+export function collapsedSection(key, title, rows) {
+  if (!rows.length) return null
+  const details = h('details', { class: 'collapsed-section', 'data-section': key, open: openSections.has(key) },
+    h('summary', {}, `${title} (${rows.length})`),
+    h('div', { class: 'settings-list' }, ...rows))
+  details.addEventListener('toggle', () => (details.open ? openSections.add(key) : openSections.delete(key)))
+  return details
+}
+
 /**
  * Tabs with role="tab". tabs: [{ id, label }]. The panel for a tab is the element with id `panel-<id>`.
  * The chosen tab is kept in location.hash (#tab=<id>) so a reload stays put.
@@ -59,6 +76,12 @@ export function mountTabs(tablist, tabs, onChange) {
       if (on && focus) b.focus()
       const panel = document.getElementById(`panel-${b.dataset.tab}`)
       if (panel) panel.hidden = !on
+    }
+    // On a phone the tabs are one row that scrolls sideways inside itself: bring the chosen tab into view (never the page).
+    const active = buttons.find((b) => b.dataset.tab === id)
+    if (active && tablist.scrollWidth > tablist.clientWidth) {
+      const left = active.offsetLeft - (tablist.clientWidth - active.offsetWidth) / 2
+      tablist.scrollLeft = Math.max(0, Math.min(left, tablist.scrollWidth - tablist.clientWidth))
     }
     if (history.replaceState) history.replaceState(null, '', `${location.pathname}${location.search}#tab=${id}`)
     const changed = current !== id

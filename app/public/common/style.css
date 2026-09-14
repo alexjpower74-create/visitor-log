@@ -189,7 +189,26 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); outline
 .clock { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .who { color: var(--muted); }
 
+.collapsed-section { margin-top: 12px; }
+.collapsed-section > summary {
+  min-height: var(--tap);
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-sm);
+  color: var(--muted);
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+.collapsed-section > summary::-webkit-details-marker { display: none; }
+.collapsed-section > summary::before { content: "+"; width: 1.4em; font-weight: 700; }
+.collapsed-section[open] > summary::before { content: "−"; }
+.collapsed-section > .settings-list { margin-top: 10px; }
+
 [role="tablist"] {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
@@ -275,12 +294,29 @@ td .kind { color: var(--muted); font-size: 13px; margin-left: 4px; }
 
 .section-title { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin: 22px 0 10px; }
 
+/* Phone: the sticky header is two short lines (home + SAMPLE; time, name and 44 px buttons), at most 96 px, and the tabs are one
+   row that scrolls sideways inside itself. The page never scrolls sideways. */
 @media (max-width: 600px) {
   .wrap { padding: 12px 14px 48px; }
-  .app-header .inner { padding: 6px 14px; }
-  .home-name { font-size: 15px; }
-  .who-line { margin-left: 0; gap: 8px; }
-  [role="tab"] { padding: 0 12px; }
+  .app-header .inner { padding: 5px 14px; gap: 3px; flex-direction: column; flex-wrap: nowrap; align-items: stretch; }
+  .home-line { flex-wrap: nowrap; }
+  .home-name { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .home-line .sample-badge { flex: none; }
+  .who-line { margin-left: 0; gap: 8px; flex-wrap: nowrap; min-width: 0; }
+  .who-line .clock { font-size: 14px; flex: none; }
+  .clock-date { display: none; }
+  .who-line .who { flex: 1 1 auto; min-width: 0; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .who-line button, .who-line .button { flex: none; padding: 0 12px; font-size: 15px; }
+  [role="tablist"] {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    margin: 12px -14px;
+    padding: 4px 14px;
+  }
+  [role="tablist"]::-webkit-scrollbar { display: none; }
+  [role="tab"] { flex: none; padding: 0 14px; white-space: nowrap; }
 }
 
 @media print {

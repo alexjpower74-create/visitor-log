@@ -120,6 +120,26 @@ rows) before counting zero rows. Re-run pinned at `516a3e2` (19:04): **journey 2
   refused Show leaves the previous contact list under the new dates; (4) the 390 header cuts "(SAMPLE)" off the staff name.
 - **The lead's journey spec** was run by vl1 and failed at a strict-mode locator on the roll call page; fixed (bccf7ff).
 
+## Known gaps
+
+- **One test scrolls with script in WebKit.** vl2's sticky-header check scrolls with `window.scrollBy` in mobile WebKit, because
+  Playwright has no mouse wheel or touch drag there (recorded as a test annotation); Chromium scrolls with a real wheel.
+- **Tested in Playwright's phone and tablet emulation** (390 wide and 1024×768, chromium + webkit), not on a real phone at a real door
+  or a real nurse's-desk tablet.
+- **No rate limit on visitor sign-ins.** Anyone who can open the sign-in page could fill the log with made-up visits. The resident
+  search needs 2 characters and returns at most 8 names, but someone patient could still list the residents two letters at a time.
+- **The sign-out link is a capability link.** Anyone holding a visitor's link can sign that visit out until midnight. It never shows
+  the phone number or another visit.
+- **An automatic sign-out at closing may catch someone who is still inside.** The staff page lists those as "not confirmed" so a
+  count of zero is never trusted blindly.
+- **Visiting hours are the same every day** (1 to 4 windows per unit): no weekday, weekend or holiday schedule.
+- **One sign-in is one person.** Children and anyone without a phone are signed in at the desk.
+- **No offline mode.** A visitor needs data or Wi-Fi at the door, and the desk needs the Worker.
+- **Staff sessions last 12 hours** (by design): a desk tablet goes back to the keypad after a shift.
+- **"Deleted" means deleted from the live database.** D1's Time Travel can restore a database to an earlier point for its window.
+- **No privacy review yet.** The privacy notice's wording and the retention period need the home's privacy officer (PHIA / ATIPPA as
+  they apply) before real visitors use it.
+
 ## Contract changes made during the build
 
 - vl2 asked what a staff sign-in with no resident returns → API.md: 400 `field: "resident_id"`, checked first (6be6cde).

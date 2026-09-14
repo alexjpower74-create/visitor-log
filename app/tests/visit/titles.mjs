@@ -7,4 +7,5 @@ export const TITLES = {
   hours: "blocked: at 12:00 PM Mary is outside Harbour wing's visiting hours",
   link: "the link: /out/ on another phone signs out; staff and automatic sign-outs show their sentences; yesterday's link after midnight shows only the 410 text",
   privacy: 'privacy: 30 days, then 14 days after the home changes it, on /privacy/ and on step 1',
+  yesThenNo: 'screening: after a Yes, tapping No on the same question hides the stop message and brings Sign in back; nothing is sent until Sign in',
 }

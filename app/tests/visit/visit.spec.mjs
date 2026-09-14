@@ -178,6 +178,55 @@ test(TITLES.screening, async ({ page, context, request }, testInfo) => {
   assertNoThirdParty(context)
 })
 
+test(TITLES.yesThenNo, async ({ page, context, request }, testInfo) => {
+  await fresh(context, request)
+  const manager = await managerToken(request)
+  await setScreeningViaApi(request, manager, { enabled: true, stop_message: EXAMPLE_SCREENING.stop_message, questions: EXAMPLE_SCREENING.questions })
+  const staff = await staffToken(request)
+  const posts = []
+  page.on('request', (r) => { if (r.method() === 'POST' && r.url().includes('/api/visitor/signin')) posts.push(r.url()) })
+
+  await details(page, { name: 'Grace F. (SAMPLE)', phone: '709-555-0133' })
+  await pick(page, 'fr', 'r_frank', 'Frank O. (SAMPLE)')
+  const questions = page.locator('#screening .question')
+  await expect(questions).toHaveCount(2)
+  const answer = (i, value) => questions.nth(i).locator(`button.answer[data-answer="${value}"]`)
+
+  await tap(page, answer(0, 'no'), 'No')
+  await tap(page, answer(1, 'yes'), 'Yes')
+  await expect(page.locator('#stop')).toBeVisible()
+  await expect(page.locator('#sign-in')).toBeHidden()
+
+  // The visitor changes their mind on the same question.
+  await tap(page, answer(1, 'no'), 'No, on the same question')
+  await expect(answer(1, 'no')).toHaveAttribute('aria-pressed', 'true')
+  await expect(answer(1, 'yes')).toHaveAttribute('aria-pressed', 'false')
+  await expect(page.locator('#stop')).toBeHidden()
+  await expect(page.locator('#sign-in')).toBeVisible()
+  await expect(page.locator('#sign-in')).toBeEnabled()
+  await shot(page, testInfo, 'visit', '15-yes-then-no')
+
+  // While any answer is still "Yes", the stop message stays: two Yes, then one changed back to No.
+  await tap(page, answer(0, 'yes'), 'Yes on the first question')
+  await tap(page, answer(1, 'yes'), 'Yes on the second question')
+  await tap(page, answer(1, 'no'), 'No on the second question')
+  await expect(page.locator('#stop')).toBeVisible()
+  await expect(page.locator('#sign-in')).toBeHidden()
+  await tap(page, answer(0, 'no'), 'No on the first question')
+  await expect(page.locator('#stop')).toBeHidden()
+  await expect(page.locator('#sign-in')).toBeEnabled()
+
+  await page.waitForTimeout(600) // time for a wrong page to send something
+  expect(posts, 'nothing is sent before Sign in').toEqual([])
+  expect((await buildingViaApi(request, staff)).total).toBe(0)
+  await tap(page, page.locator('#sign-in'), 'Sign in')
+  await expect(page.locator('#signed-in')).toBeVisible()
+  expect(posts).toHaveLength(1)
+  const lighthouse = (await buildingViaApi(request, staff)).units.find((u) => u.id === 'u_lighthouse')
+  expect(lighthouse.visits.map((v) => [v.visitor_name, v.screened])).toEqual([['Grace F. (SAMPLE)', true]])
+  assertNoThirdParty(context)
+})
+
 test(TITLES.blocked, async ({ page, context, request }, testInfo) => {
   await fresh(context, request)
   await details(page)

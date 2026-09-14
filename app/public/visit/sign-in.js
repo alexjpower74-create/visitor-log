@@ -206,6 +206,12 @@ function answer(qid, value) {
     showStop(state.start.screening.stop_message)
     return
   }
+  // A "No" that leaves no "Yes" anywhere (the visitor changed their answer): the stop message goes and Sign in comes back,
+  // enabled by the usual rule.
+  if (!Object.values(state.answers).includes('yes')) {
+    stop.hidden = true
+    signIn.hidden = false
+  }
   refreshSignIn()
 }
 

@@ -460,3 +460,33 @@ I looked at the screenshots, not only the checks.
   - the notice pickers: "Whole home", "Notice", "Visiting restricted", "Outbreak".
 
 Servers: the Worker I started on 8402 was stopped afterwards and its `.state-dev` removed.
+
+### vl2's finding on the visitor pages: a "Yes" changed to "No" left the stop message open (DONE)
+
+**The defect (vl2, from reading `visit/sign-in.js`):** after a screening "Yes", tapping "No" on the same question instead of "I tapped
+Yes by mistake" repainted the buttons and refreshed Sign in, but never hid `#stop` or showed `#sign-in` again. The page then showed
+"No" pressed, the stop message, and no Sign in. Nothing was sent, but the buttons and the words disagreed.
+
+**Fix (`visit/sign-in.js` `answer()`):** after any "No" that leaves no "Yes" among the answers, `#stop` is hidden and `#sign-in` shown
+again, enabled by the usual rule (every question answered No, and the notice confirmed if there is one). A "Yes" works exactly as
+before: the stop message appears at once, Sign in is hidden, and nothing is sent. While any other answer is still "Yes", the stop
+message stays.
+
+**Test (`visit.spec.mjs`, "screening: after a Yes, tapping No on the same question hides the stop message and brings Sign in back;
+nothing is sent until Sign in"):**
+- Screening is on with the two example questions; pick Frank; answer No, then Yes. `#stop` shows and `#sign-in` is hidden.
+- Tap No on that same question: "No" is pressed and "Yes" is not, `#stop` is hidden, and `#sign-in` is visible and enabled
+  (screenshot `15-yes-then-no`).
+- Then Yes on both questions and No on one: `#stop` stays and Sign in stays hidden. No on the other: `#stop` is hidden and Sign in
+  is enabled.
+- No `POST /api/visitor/signin` was seen until Sign in, and the building total stayed 0. Sign in then sends exactly one POST, and
+  the visitor is in on Lighthouse wing with `screened: true`.
+
+**Control (s) `negative:stop-stays`** (the copy's `answer()` never hides `#stop` or brings Sign in back) went **RED as intended**:
+`Error: expect(locator).toBeHidden() failed · Locator: locator('#stop') · Expected: hidden · Received: visible`, on the new test in
+chromium-390. The output is appended to `app/tests/visit/negative-control.log`; `node tests/visit/negative-all.mjs` now runs
+(m), (n), (o), (p), (r) and (s).
+
+**Visitor suite:** `E2E_PORT=8404 npx playwright test tests/visit` → **18/18 pass** (8 visit tests and the targets test, in chromium-390
+and webkit-390). The `15-yes-then-no` screenshot shows both answers "No" pressed, no stop message, and Sign in enabled.
+Working-tree numbers; the lead's come from `rig qa`. Every server I started for this was stopped.

@@ -5,7 +5,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
-const NAMES = ['stale-notice', 'yes-posts', 'overlay', 'forget-me', 'header-covers']
+const NAMES = ['stale-notice', 'yes-posts', 'overlay', 'forget-me', 'header-covers', 'stop-stays']
 const results = NAMES.map((n) => [n, spawnSync(process.execPath, [path.join(HERE, `negative-${n}.mjs`)], { stdio: 'inherit' }).status])
 console.log('\n== visit negative controls')
 for (const [n, code] of results) console.log(`${code === 0 ? 'RED (good)  ' : 'NOT RED (bad)'} visit negative:${n} exit ${code}`)

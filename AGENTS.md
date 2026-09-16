@@ -23,7 +23,8 @@ Read PLAN.md first (the Rig contract), then docs/API.md (the contract between sl
 
 ## Rules that bite here
 
-- **Local only.** `wrangler dev --local`. No `wrangler deploy`, `secret put`, `d1 create`, `--remote`, Pages or DNS.
+- **Deploys only when Alexander says so (he did on 2026-09-15: the SAMPLE demo is live at visitor-log.alexjpower74.workers.dev).**
+  Day to day: `wrangler dev --local`. The repo is public: run `check-no-personal-data .` before every push.
 - **Nothing is sent.** No email, no SMS. The visitor's sign-out link lives on their own phone.
 - **SAMPLE only.** Home "SAMPLE Harbourview Care Home (demo)"; residents, visitors and staff are SAMPLE and labelled SAMPLE.
 - **No health information about residents**: first name, last initial, room, unit, "by arrangement". Screening answers are never

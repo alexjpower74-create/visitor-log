@@ -1,6 +1,22 @@
-# Visitor Log: deploying (not done; Alexander decides)
+# Visitor Log: deploying
 
-Nothing was deployed during the overnight build. Everything below is what a real deployment for one home needs. One deployment is
+## What is live (2026-09-15, on Alexander's go)
+
+| Piece | Value |
+|---|---|
+| Worker + app | <https://visitor-log.alexjpower74.workers.dev> (`visitor-log`, one Worker serving `/api/*` and `app/public/`) |
+| D1 | `visitor-log`, id `81c7a857-cbd2-4eb6-85ea-a7b645381653`, migration `0001_init.sql` applied `--remote` |
+| Cron | `*/15 * * * *` (maintenance) |
+| Secrets, R2, KV | none |
+| Data | the SAMPLE home only (`/api/info` says `sample: true`) |
+
+How the SAMPLE data got there without `TEST_MODE` in production: one temporary `wrangler deploy --var TEST_MODE:1`, one
+`POST /api/test/seed {"scenario":"demo"}`, then `wrangler deploy` again with no var. `POST /api/test/reset` answers 404 on the
+live Worker. The seeded visits age out after the 30-day retention period; to refresh the demo, repeat those three steps.
+
+## For a real home
+
+Everything below is what a real deployment for one home needs. One deployment is
 one home: its own D1 database, its own Worker, its own address.
 
 ## What it is on Cloudflare

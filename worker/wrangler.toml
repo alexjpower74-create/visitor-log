@@ -2,13 +2,13 @@ name = "visitor-log"
 main = "src/index.js"
 compatibility_date = "2026-09-01"
 
-# Local only tonight (wrangler dev --local). TEST_MODE is never set here: tests pass --var TEST_MODE:1.
+# TEST_MODE is never set here: tests pass --var TEST_MODE:1. The one-off SAMPLE seed used a temporary deploy with the var (docs/DEPLOY.md).
 
 [[d1_databases]]
 binding = "DB"
 database_name = "visitor-log"
-# Placeholder: a real deploy replaces this with the id from `wrangler d1 create` (see docs/DEPLOY.md).
-database_id = "00000000-0000-0000-0000-000000000000"
+# Live D1 (created 2026-09-15 by `wrangler d1 create visitor-log`).
+database_id = "81c7a857-cbd2-4eb6-85ea-a7b645381653"
 migrations_dir = "migrations"
 
 # Maintenance: auto sign-out at closing, retention deletes, expired sessions.

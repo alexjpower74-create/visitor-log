@@ -2,7 +2,7 @@
   "name": "visitor-log",
   "private": true,
   "type": "module",
-  "description": "QR visitor sign-in for a Newfoundland long-term care, personal care or group home. Local build; see README.md.",
+  "description": "QR visitor sign-in for a Newfoundland long-term care, personal care or group home. See README.md.",
   "scripts": {
     "demo": "node demo.mjs",
     "test:worker": "cd worker && npm test",

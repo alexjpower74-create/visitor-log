@@ -2,7 +2,11 @@
 
 QR sign-in for visitors at a long-term care home, personal care home or group home in Newfoundland and Labrador. A visitor scans
 the code at the door and signs in and out on their own phone; staff see who is in the building right now, run a fire-drill roll
-call and pull a contact list. Local build only; nothing is deployed or sent.
+call and pull a contact list.
+
+**Live demo (SAMPLE data, nothing real):** <https://visitor-log.alexjpower74.workers.dev/> · staff
+<https://visitor-log.alexjpower74.workers.dev/staff/> (PIN `2580`) · settings <https://visitor-log.alexjpower74.workers.dev/settings/>
+(PIN `7314`). Nothing is sent by the app: no email, no SMS.
 
 ## Open it (on this computer)
 
@@ -78,7 +82,7 @@ cd app && E2E_PORT=8408 node tests/journey/negative-journey.mjs
 
 ## What deploying needs
 
-Nothing is deployed. `docs/DEPLOY.md` has the steps. In short: D1 database `visitor-log`, Worker `visitor-log` (static assets from
+The demo is deployed (2026-09-15) as one Worker on Cloudflare; `docs/DEPLOY.md` has what was created and the steps for a real home. In short: D1 database `visitor-log`, Worker `visitor-log` (static assets from
 `app/public`), a cron trigger `*/15 * * * *` for automatic sign-out and retention deletes, **no secrets** (PINs are hashes in D1),
 no R2 or KV. The real home and its first manager come from `worker/tools/first-setup.mjs`. Never set `TEST_MODE`.
 

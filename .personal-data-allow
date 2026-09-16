@@ -1,0 +1,2 @@
+# The settings table is called "home" (the home the visitor log belongs to); `x.home` is a property read, not a LAN hostname.
+: [A-Za-z_.]+\.home$
